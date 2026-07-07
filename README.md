@@ -46,3 +46,68 @@ meu-todo-app/
         ├── views/           # Páginas completas da aplicação
         ├── App.vue          # Componente raiz
         └── main.js          # Ponto de entrada do Vue
+
+## ✨ Funcionalidades do Laboratório
+
+Este projeto foi construído como um ambiente de estudos e laboratório, dispensando tabelas complexas de usuários para focar no fluxo principal de dados:
+
+* Criar novas tarefas.
+* Listar todas as tarefas cadastradas (mais recentes primeiro).
+* Marcar tarefas como concluídas ou pendentes.
+* Excluir tarefas do banco de dados.
+
+---
+
+## 🚀 Como Executar Localmente
+
+### Pré-requisitos
+Certifique-se de ter instalado em sua máquina:
+* **Docker** e **Docker Compose**
+* **[Just](https://just.systems/)** (Recomendado para facilitar a execução dos comandos)
+
+### Passos para Inicialização
+
+**1. Clone o repositório**
+```bash
+git clone [https://github.com/SEU_USUARIO/meu-todo-app.git](https://github.com/SEU_USUARIO/meu-todo-app.git)
+cd meu-todo-app
+
+### 2. Gerencie o Ambiente com o Just
+
+O projeto conta com um `justfile` configurado para automatizar o ciclo de vida dos containers. Utilize os comandos abaixo na raiz do projeto:
+
+*   **Para listar os comandos disponíveis:**
+    ```bash
+    just help
+    ```
+
+*   **Para construir e criar o ambiente (recreação forçada):**
+    ```bash
+    just create
+    ```
+    *(Nota: O comando executa por baixo dos panos `docker compose up --build --force-recreate`)*
+
+*   **Para iniciar os serviços em segundo plano (Modo Detached):**
+    ```bash
+    just start
+    ```
+
+*   **Para parar os serviços e limpar os volumes (Limpeza total):**
+    ```bash
+    just stop
+    ```
+
+### 3. Acesse a Aplicação
+
+Após iniciar os serviços, acesse:
+
+*   **Frontend (Interface):** [http://localhost:5173](http://localhost:5173)
+*   **Backend (API):** [http://localhost:3000/api/todos](http://localhost:3000/api/todos)
+
+---
+
+## 🧠 Detalhes de Infraestrutura (Docker)
+
+Ambos os serviços (Backend e Frontend) utilizam **Multi-stage builds** em seus `Dockerfiles`. 
+
+O ambiente de desenvolvimento atualiza o código em tempo real (*Hot-Reload*) através do espelhamento de volumes (`volumes: - .:/usr/src/app`), permitindo editar os arquivos no sistema host com reflexo imediato nos containers.
