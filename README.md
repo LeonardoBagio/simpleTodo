@@ -46,6 +46,7 @@ meu-todo-app/
         ├── views/           # Páginas completas da aplicação
         ├── App.vue          # Componente raiz
         └── main.js          # Ponto de entrada do Vue
+```
 
 ## ✨ Funcionalidades do Laboratório
 
@@ -71,6 +72,7 @@ Certifique-se de ter instalado em sua máquina:
 ```bash
 git clone [https://github.com/SEU_USUARIO/meu-todo-app.git](https://github.com/SEU_USUARIO/meu-todo-app.git)
 cd meu-todo-app
+```
 
 ### 2. Gerencie o Ambiente com o Just
 
