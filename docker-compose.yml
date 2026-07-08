@@ -1,0 +1,63 @@
+services:
+  # ==========================================
+  # 1. Backend (Node.js + Express)
+  # ==========================================
+  backend:
+    build: 
+      context: ./backend
+      target: development     # Usa o estágio de dev do Dockerfile
+    ports:
+      - "3000:${NODE_PORT:-3000}"
+    volumes:
+      - ./backend:/usr/src/app
+      - /usr/src/app/node_modules
+    environment:
+      - NODE_ENV=development
+      - PORT=${NODE_PORT:-3000}
+      - MONGO_URI=mongodb://${DATA_BASE_USER}:${DATA_BASE_PASSWORD}@database:${DATA_BASE_PORT:-27017}/${DATA_BASE_NAME}?authSource=admin
+    command: npm run dev
+    depends_on:
+      database:
+        condition: service_healthy
+
+  # ==========================================
+  # 2. Frontend (Vue.js + Vuetify via Vite)
+  # ==========================================
+  frontend:
+    build:
+      context: ./frontend
+      target: development     # Usa o estágio de dev do Dockerfile
+    ports:
+      - "5173:5173"           # Porta padrão do Vite (Vue)
+    volumes:
+      - ./frontend:/usr/src/app
+      - /usr/src/app/node_modules
+    environment:
+      - NODE_ENV=development
+      # Passa a URL do backend para o Vue conseguir fazer as requisições
+      - VITE_API_URL=http://localhost:${NODE_PORT:-3000} 
+    command: npm run dev
+    depends_on:
+      - backend
+
+  # ==========================================
+  # 3. Banco de Dados (MongoDB)
+  # ==========================================
+  database:
+    image: mongo:latest
+    ports:
+      - "${DATA_BASE_PORT:-27017}:27017"
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=${DATA_BASE_USER}
+      - MONGO_INITDB_ROOT_PASSWORD=${DATA_BASE_PASSWORD}
+      - MONGO_INITDB_DATABASE=${DATA_BASE_NAME}
+    volumes:
+      - mongo_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 5s
+      timeout: 10s
+      retries: 10
+
+volumes:
+  mongo_data:
