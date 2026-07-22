@@ -1,7 +1,7 @@
 {
   "openapi": "3.0.0",
   "info": {
-    "title": "Minha API Node.js",
+    "title": "ToDo API Node.js",
     "version": "1.0.0",
     "description": ""
   },
@@ -15,11 +15,93 @@
       "get": {
         "description": "",
         "responses": {
-          "200": {
-            "description": "OK"
+          "default": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/todo/todo": {
+      "post": {
+        "description": "",
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "title": {
+                    "example": "any"
+                  },
+                  "completed": {
+                    "example": "any"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Todo": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "example": "Todo"
           },
-          "500": {
-            "description": "Internal Server Error"
+          "required": {
+            "type": "array",
+            "example": [
+              "title"
+            ],
+            "items": {
+              "type": "string"
+            }
+          },
+          "properties": {
+            "type": "object",
+            "properties": {
+              "title": {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "example": "string"
+                  }
+                }
+              },
+              "completed": {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "example": "boolean"
+                  }
+                }
+              }
+            }
+          },
+          "example": {
+            "type": "object",
+            "properties": {
+              "title": {
+                "type": "string",
+                "example": "Estudar Node.js"
+              },
+              "completed": {
+                "type": "boolean",
+                "example": false
+              }
+            }
           }
         }
       }

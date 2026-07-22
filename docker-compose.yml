@@ -43,16 +43,16 @@ services:
   # ==========================================
   # 3. Banco de Dados (MongoDB)
   # ==========================================
-  #database:
-    #image: mongo:latest
-    #ports:
-    #  - "${DATA_BASE_PORT:-27017}:27017"
-    #environment:
-    #  - MONGO_INITDB_ROOT_USERNAME=${DATA_BASE_USER}
-    #  - MONGO_INITDB_ROOT_PASSWORD=${DATA_BASE_PASSWORD}
-    #  - MONGO_INITDB_DATABASE=${DATA_BASE_NAME}
-    #volumes:
-    #  - mongo_data:/data/db
+  database:
+    image: mongo:latest
+    ports:
+      - "${DATA_BASE_PORT:-27017}:27017"
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=${DATA_BASE_USER}
+      - MONGO_INITDB_ROOT_PASSWORD=${DATA_BASE_PASSWORD}
+      - MONGO_INITDB_DATABASE=${DATA_BASE_NAME}
+    volumes:
+      - mongo_data:/data/db
     #healthcheck:
     #  test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
     #  interval: 5s

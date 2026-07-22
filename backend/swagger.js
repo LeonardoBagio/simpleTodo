@@ -1,11 +1,20 @@
 const swaggerAutogen = require('swagger-autogen')({ openapi: '3.0.0' });
+const m2s = require('mongoose-to-swagger');
+const Todo = require('./models/TodoModel'); 
+
+const swaggerTodoSchema = m2s(Todo);
 
 const doc = {
   info: {
-    title: 'Minha API Node.js',
+    title: 'ToDo API Node.js',
     version: '1.0.0'
   },
-  host: 'localhost:3000'
+  host: 'localhost:3000',
+  components: {
+    schemas: {
+      Todo: swaggerTodoSchema
+    }
+  }
 };
 
 const outputFile = './swagger-output.json';

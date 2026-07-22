@@ -5,10 +5,12 @@ const todoSchema = new mongoose.Schema({
     type: String,
     required: [true, 'Adicione um título para a tarefa'],
     trim: true,
+		example: "Estudar Node.js"
   },
   completed: {
     type: Boolean,
     default: false,
+		example: false
   },
 }, {
   timestamps: true,
