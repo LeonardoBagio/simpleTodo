@@ -1,22 +1,88 @@
 const Todo = require('../models/TodoModel');
-const {StatusCodes, getReasonPhrase } = require('http-status-codes');
+const { StatusCodes } = require('http-status-codes');
 
 exports.getAll = async (req, res, next) => {
 	try {
 		const all = await Todo.find().sort({ createdAt: -1 });
-
 		res.status(StatusCodes.OK).json(all);
 	} catch (error) {
-		res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ message: 'Error retrieving all', error: error.message });
+		next(error);
 	}
-}
+};
 
 exports.create = async (req, res, next) => {
 	try {
-		const todo = await Todo.create({ title: req.body.title, completed: req.body.completed })
+		const title = typeof req.body.title === 'string' ? req.body.title.trim() : '';
+		if (!title) {
+			return res
+				.status(StatusCodes.BAD_REQUEST)
+				.json({ message: 'O título da tarefa é obrigatório' });
+		}
 
-		res.status(StatusCodes.OK).json(todo)
+		const todo = await Todo.create({
+			title,
+			completed: Boolean(req.body.completed),
+		});
+
+		res.status(StatusCodes.CREATED).json(todo);
 	} catch (error) {
-		res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ message: 'Error retrieving all', error: error.message });
+		next(error);
 	}
-}
+};
+
+exports.update = async (req, res, next) => {
+	try {
+		const updates = {};
+
+		if (typeof req.body.title === 'string') {
+			const title = req.body.title.trim();
+			if (!title) {
+				return res
+					.status(StatusCodes.BAD_REQUEST)
+					.json({ message: 'O título não pode ser vazio' });
+			}
+			updates.title = title;
+		}
+
+		if (req.body.completed !== undefined) {
+			updates.completed = Boolean(req.body.completed);
+		}
+
+		if (Object.keys(updates).length === 0) {
+			return res
+				.status(StatusCodes.BAD_REQUEST)
+				.json({ message: 'Nenhum campo válido para atualizar' });
+		}
+
+		const todo = await Todo.findByIdAndUpdate(req.params.id, updates, {
+			new: true,
+			runValidators: true,
+		});
+
+		if (!todo) {
+			return res
+				.status(StatusCodes.NOT_FOUND)
+				.json({ message: 'Tarefa não encontrada' });
+		}
+
+		res.status(StatusCodes.OK).json(todo);
+	} catch (error) {
+		next(error);
+	}
+};
+
+exports.remove = async (req, res, next) => {
+	try {
+		const todo = await Todo.findByIdAndDelete(req.params.id);
+
+		if (!todo) {
+			return res
+				.status(StatusCodes.NOT_FOUND)
+				.json({ message: 'Tarefa não encontrada' });
+		}
+
+		res.status(StatusCodes.OK).json({ message: 'Tarefa excluída', id: todo._id });
+	} catch (error) {
+		next(error);
+	}
+};

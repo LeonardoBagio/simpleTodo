@@ -117,7 +117,8 @@ model ou uma rota.
 
 ## Variáveis de ambiente
 
-A configuração vem do `.env` (veja `.env.example` e `backend/.env.example`).
+A configuração vem de um **`.env` único na raiz** (veja `.env.example`). Todo
+serviço recebe suas variáveis a partir dele, injetadas pelo `docker-compose.yml`.
 Nunca faça commit de um `.env` real.
 
 - `NODE_PORT` — porta em que a API escuta (lida via `process.env.NODE_PORT`).
@@ -143,6 +144,9 @@ Nunca faça commit de um `.env` real.
   `try/catch` (ou ser tratado por middleware central de erros — veja abaixo).
 - **Camadas:** uma responsabilidade por arquivo — routers mapeiam paths,
   controllers guardam a lógica, models definem schema + validação.
+- **Sem comentários:** não deixe comentários no código. Escreva código
+  autoexplicativo (nomes claros, funções pequenas) em vez de explicá-lo com
+  comentários.
 
 ## Boas práticas em Node.js
 

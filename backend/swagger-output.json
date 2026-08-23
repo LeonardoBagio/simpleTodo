@@ -11,7 +11,7 @@
     }
   ],
   "paths": {
-    "/todo/": {
+    "/api/todos/": {
       "get": {
         "description": "",
         "responses": {
@@ -19,9 +19,7 @@
             "description": ""
           }
         }
-      }
-    },
-    "/todo/todo": {
+      },
       "post": {
         "description": "",
         "responses": {
@@ -44,6 +42,61 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "/api/todos/{id}": {
+      "patch": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "title": {
+                    "example": "any"
+                  },
+                  "completed": {
+                    "example": "any"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": ""
           }
         }
       }
