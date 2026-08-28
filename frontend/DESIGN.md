@@ -55,28 +55,53 @@ Monocromática. Use sempre os aliases semânticos (tokens em `src/styles/app.css
 - `.reveal` → `.is-visible` — animação de entrada via diretiva `v-reveal`
   (`src/plugins/reveal.js`; IntersectionObserver com fallback e reduced-motion).
 
+## Navegação & telas (`vue-router`)
+
+Menu **vertical fixo à esquerda** (escuro), com o `Wordmark` no topo e quatro
+destinos (`src/router/index.js`, views em `src/views`):
+
+- **Painel** (`/painel`) — board de tarefas **agrupado por status** (cada status
+  é um grupo colapsável com contagem; grupos vazios são ocultados; tarefas sem
+  status caem em **"Sem Andamento"**, exibido primeiro). Composer inline para
+  criar/editar, busca por título e filtro por categoria.
+- **Dashboard** (`/dashboard`) — gráficos **Chart.js**: entregas por categoria
+  (barras), distribuição por grupo de andamento (doughnut) e tarefas por status
+  (barras horizontais); stat tiles e filtro por categoria. As cores dos gráficos
+  vêm dos próprios cadastros.
+- **Categoria** (`/categorias`) — CRUD de categorias (nome + **cor**), com prévia
+  em pill.
+- **Status** (`/status`) — CRUD de status (nome + **cor** + **grupo PRIME**:
+  A fazer / Em andamento / Concluídos), listado agrupado pelos três grupos.
+
+## Dados: cadastros de Status e Categoria
+
+Status e Categoria são **cadastros globais** (coleções no backend, populadas por
+seed na primeira execução e totalmente editáveis via CRUD). `src/stores/catalog.js`
+é um singleton reativo que os busca uma vez e expõe `statusById`, `categoryById`
+e `statusesByGroup`. `src/utils/states.js` guarda `GROUP_ORDER`/`GROUP_LABEL`
+(A fazer → Em andamento → Concluídos) e `fmtDate` (data + hora completas).
+
 ## Componentes Vue (`src/components`)
 
 - **Wordmark** — mark monocromático (tile ink/branco + medidor), prop `tone`
-  (`dark` no header/footer) e `compact`.
-- **StateLamp** — ponto de estado genérico por **cor** (props `color`, `pulse`).
-- **ProgressHeader** — cabeçalho de seção: título + divider + contagens +
-  barra de progresso monocromática (ink).
-- **TodoComposer** — card com `field` + `btn-primary` (ink) para criar tarefa.
-- **TodoFilters** — filtro estilo *ribbon*: chips com lâmpada + rótulo +
-  contagem (Todas / Pendentes / Concluídas).
-- **TodoItem** — card de tarefa estilo projeto: pill de estado clicável
-  (lâmpada + label), título Montserrat caixa alta (riscado + verde quando
-  concluída), data da criação e ações rápidas (concluir / excluir com
-  confirmação).
-- **EmptyState** — card centrado com divider + section-title conforme o filtro.
+  (`dark` na sidebar) e `compact`.
+- **StateLamp** — ponto de estado genérico por **cor** (props `color`, `pulse`);
+  pulsa no grupo "Em andamento".
+- **StateSelect** — dropdown **agrupado** de status (seções A fazer / Em andamento
+  / Concluídos), teleportado ao `body` para não ser cortado pelos cards.
+- **CategorySelect** — dropdown de categoria (pill colorida + "Sem categoria").
+- **TaskCard** — card de tarefa: `StateSelect` e `CategorySelect` inline, título
+  Montserrat caixa alta (riscado + verde quando concluída), data da última edição
+  e ações (editar / excluir com confirmação). O card do grupo "Em andamento"
+  ganha brilho na cor do status.
+- **TaskComposer** — card de criar/editar (título + status + categoria).
 
 ## Layout & ordem
 
-- Header e footer escuros (fixos), conteúdo claro entre eles — padrão do
-  portfólio. `max-width` 1120px.
-- Grid do board: `auto-fill` + `minmax(280px, 1fr)`, gap `--space-5`.
-- Mais recentes primeiro (a API retorna ordenado por criação desc).
+- Sidebar escura fixa à esquerda + conteúdo claro à direita. `max-width` 1120px.
+- Grid do board: `auto-fill` + `minmax(280px, 1fr)`.
+- Ordem: pelo grupo do status (Sem Andamento → A fazer → Em andamento →
+  Concluídos, via `sortOrder`) e, dentro do grupo, pela edição mais recente.
 
 ## Acessibilidade & movimento
 
@@ -87,5 +112,9 @@ Monocromática. Use sempre os aliases semânticos (tokens em `src/styles/app.css
 
 ## Integração
 
-`src/services/api.js` (Axios) consome `${VITE_API_URL}/api/todos`
-(`GET`, `POST`, `PATCH /:id`, `DELETE /:id`).
+`src/services/api.js` (Axios) consome `${VITE_API_URL}/api`:
+
+- `todos` — `GET /todos`, `POST /todos`, `PATCH /todos/:id`, `DELETE /todos/:id`
+  (tarefa carrega `status` e `category` populados).
+- `statuses` — `GET/POST /statuses`, `PATCH /statuses/:id`, `DELETE /statuses/:id`.
+- `categories` — `GET/POST /categories`, `PATCH /categories/:id`, `DELETE /categories/:id`.

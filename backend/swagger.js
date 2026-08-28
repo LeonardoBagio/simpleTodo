@@ -1,8 +1,12 @@
 const swaggerAutogen = require('swagger-autogen')({ openapi: '3.0.0' });
 const m2s = require('mongoose-to-swagger');
-const Todo = require('./models/TodoModel'); 
+const Todo = require('./models/TodoModel');
+const Status = require('./models/StatusModel');
+const Category = require('./models/CategoryModel');
 
 const swaggerTodoSchema = m2s(Todo);
+const swaggerStatusSchema = m2s(Status);
+const swaggerCategorySchema = m2s(Category);
 
 const doc = {
   info: {
@@ -12,7 +16,9 @@ const doc = {
   host: 'localhost:3000',
   components: {
     schemas: {
-      Todo: swaggerTodoSchema
+      Todo: swaggerTodoSchema,
+      Status: swaggerStatusSchema,
+      Category: swaggerCategorySchema
     }
   }
 };

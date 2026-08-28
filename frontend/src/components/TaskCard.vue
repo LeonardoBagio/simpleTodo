@@ -1,48 +1,53 @@
 <script setup>
 import { ref, computed } from 'vue';
-import { relativeTime } from '../utils/time';
-import StateLamp from './StateLamp.vue';
+import StateSelect from './StateSelect.vue';
+import CategorySelect from './CategorySelect.vue';
+import { fmtDate } from '../utils/states';
 
 const props = defineProps({
 	todo: { type: Object, required: true },
 	busy: { type: Boolean, default: false },
 });
-const emit = defineEmits(['toggle', 'remove']);
+const emit = defineEmits(['status', 'category', 'edit', 'remove']);
 
 const confirming = ref(false);
-const when = computed(() => relativeTime(props.todo.createdAt));
 
-const status = computed(() =>
-	props.todo.completed
-		? { label: 'Concluída', color: 'var(--lamp-done)' }
-		: { label: 'Pendente', color: 'var(--lamp-todo)' },
+const status = computed(() => props.todo.status || null);
+const isDone = computed(() => status.value?.group === 'concluidos');
+const isDoing = computed(() => status.value?.group === 'em_andamento');
+const accent = computed(() => status.value?.color || '#7a8593');
+
+const cardStyle = computed(() =>
+	isDoing.value
+		? {
+				borderColor: accent.value + '80',
+				background: `linear-gradient(180deg, ${accent.value}14, var(--surface) 55%)`,
+				boxShadow: `0 16px 36px -18px rgba(0,0,0,0.18), 0 0 22px -10px ${accent.value}`,
+			}
+		: {},
 );
+
+function onStatus(id) {
+	emit('status', { id: props.todo._id, status: id });
+}
+function onCategory(id) {
+	emit('category', { id: props.todo._id, category: id });
+}
 </script>
 
 <template>
-	<article class="task card card-lift" :class="{ done: todo.completed, busy }">
+	<article class="task card" :class="{ 'card-lift': !isDoing, busy }" :style="cardStyle">
 		<div class="task-head">
-			<button
-				class="state-pill"
-				type="button"
-				:aria-pressed="todo.completed"
-				:title="todo.completed ? 'Reabrir tarefa' : 'Concluir tarefa'"
-				@click="emit('toggle', todo)"
-			>
-				<StateLamp :color="status.color" :size="9" />
-				<span>{{ status.label }}</span>
-			</button>
+			<StateSelect
+				:model-value="status ? status._id : null"
+				all-label="Sem Andamento"
+				placeholder="Sem Andamento"
+				@update:model-value="onStatus"
+			/>
 
 			<div v-if="!confirming" class="actions">
-				<button
-					class="icon-btn"
-					type="button"
-					:disabled="busy"
-					:title="todo.completed ? 'Marcar como pendente' : 'Concluir'"
-					:aria-label="todo.completed ? 'Marcar como pendente' : 'Concluir'"
-					@click="emit('toggle', todo)"
-				>
-					<v-icon :icon="todo.completed ? 'mdi-undo-variant' : 'mdi-check'" size="17" />
+				<button class="icon-btn" type="button" title="Editar tarefa" aria-label="Editar tarefa" @click="emit('edit', todo)">
+					<v-icon icon="mdi-pencil-outline" size="16" />
 				</button>
 				<button
 					class="icon-btn danger"
@@ -63,17 +68,22 @@ const status = computed(() =>
 			</div>
 		</div>
 
-		<h3 class="task-title">{{ todo.title }}</h3>
+		<h3 class="task-title" :class="{ done: isDone }">{{ todo.title }}</h3>
 
 		<div class="task-foot">
-			<span v-if="when" class="when num" :title="when">{{ when }}</span>
+			<CategorySelect
+				:model-value="todo.category ? todo.category._id : null"
+				all-label="Sem categoria"
+				@update:model-value="onCategory"
+			/>
+			<span class="when num" :title="`Última edição: ${fmtDate(todo.updatedAt)}`">{{ fmtDate(todo.updatedAt) }}</span>
 		</div>
 	</article>
 </template>
 
 <style scoped>
 .task {
-	padding: 20px;
+	padding: 18px;
 	display: flex;
 	flex-direction: column;
 	gap: 14px;
@@ -84,37 +94,11 @@ const status = computed(() =>
 	pointer-events: none;
 }
 
-.task.done {
-	background: linear-gradient(180deg, rgba(75, 189, 107, 0.06), var(--surface) 55%);
-}
-
 .task-head {
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
-	gap: 12px;
-}
-
-.state-pill {
-	display: inline-flex;
-	align-items: center;
-	gap: 8px;
-	background: var(--bg-light);
-	border: 0;
-	border-radius: var(--radius-pill);
-	padding: 0.3rem 0.7rem;
-	font-family: var(--font-head);
-	font-weight: 700;
-	font-size: var(--fs-xs);
-	letter-spacing: 0.08em;
-	text-transform: uppercase;
-	color: var(--text-dark);
-	cursor: pointer;
-	transition: background 0.2s var(--ease);
-}
-
-.state-pill:hover {
-	background: rgba(0, 0, 0, 0.1);
+	gap: 10px;
 }
 
 .actions {
@@ -201,7 +185,7 @@ const status = computed(() =>
 	overflow-wrap: anywhere;
 }
 
-.task.done .task-title {
+.task-title.done {
 	color: var(--text-muted-on-light);
 	text-decoration: line-through;
 	text-decoration-color: color-mix(in srgb, var(--lamp-done) 70%, transparent);
@@ -210,7 +194,9 @@ const status = computed(() =>
 .task-foot {
 	display: flex;
 	align-items: center;
-	justify-content: flex-end;
+	justify-content: space-between;
+	gap: 10px;
+	flex-wrap: wrap;
 }
 
 .when {
@@ -218,5 +204,6 @@ const status = computed(() =>
 	font-size: 11px;
 	font-weight: 600;
 	color: var(--text-muted-on-light);
+	white-space: nowrap;
 }
 </style>

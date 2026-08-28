@@ -13,7 +13,9 @@
     "@fontsource/raleway": "^5.0.19",
     "@mdi/font": "^7.4.47",
     "axios": "^1.7.2",
+    "chart.js": "^4.4.3",
     "vue": "^3.4.27",
+    "vue-router": "^4.3.3",
     "vuetify": "^3.6.7"
   },
   "devDependencies": {

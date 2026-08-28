@@ -2,10 +2,11 @@ const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
 const connectDB = require('./config/dataBase');
+const seedCatalog = require('./config/seed');
 const { notFound, errorHandler } = require('./middlewares/errorHandler');
 
 dotenv.config();
-connectDB();
+connectDB().then(seedCatalog);
 
 const app = express();
 app.use(cors());
@@ -16,7 +17,11 @@ const swaggerDocument = require('./swagger-output.json');
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 const todoRoutes = require('./routes/todoRoutes');
+const statusRoutes = require('./routes/statusRoutes');
+const categoryRoutes = require('./routes/categoryRoutes');
 app.use('/api/todos', todoRoutes);
+app.use('/api/statuses', statusRoutes);
+app.use('/api/categories', categoryRoutes);
 
 app.use(notFound);
 app.use(errorHandler);

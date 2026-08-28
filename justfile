@@ -14,9 +14,11 @@ default:
     @just --list --unsorted
 
 # 🚀  Cria (build) e sobe os containers em segundo plano
+# --renew-anon-volumes recria o node_modules (volume anônimo) para o npm install
+# do build valer; o volume nomeado do banco (mongo_data) é preservado.
 create:
     @printf "{{ _blue }}🚀  Buildando as imagens e subindo os containers...{{ _reset }}\n"
-    docker compose up -d --build
+    docker compose up -d --build --renew-anon-volumes
     @printf "{{ _green }}✅  Pronto!{{ _reset }}\n"
     @printf "{{ _green }}    🖥️   Front-end (painel): http://localhost:5173{{ _reset }}\n"
     @printf "{{ _green }}    🔌  API:  http://localhost:3000 (docs em /api-docs){{ _reset }}\n"

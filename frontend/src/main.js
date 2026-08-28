@@ -2,6 +2,7 @@ import { createApp } from 'vue';
 import App from './App.vue';
 import vuetify from './plugins/vuetify';
 import reveal from './plugins/reveal';
+import router from './router';
 
 import '@fontsource/montserrat/400.css';
 import '@fontsource/montserrat/700.css';
@@ -13,4 +14,4 @@ import '@fontsource/raleway/700.css';
 import '@mdi/font/css/materialdesignicons.css';
 import './styles/app.css';
 
-createApp(App).use(vuetify).use(reveal).mount('#app');
+createApp(App).use(vuetify).use(router).use(reveal).mount('#app');
