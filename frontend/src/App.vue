@@ -1,133 +1,84 @@
 <script setup>
-import { ref, onMounted } from 'vue';
-import { useTheme } from 'vuetify';
+import Wordmark from './components/Wordmark.vue';
 import TodoView from './views/TodoView.vue';
-
-const theme = useTheme();
-const isDark = ref(false);
-
-function applyTheme(dark) {
-	isDark.value = dark;
-	theme.global.name.value = dark ? 'dark' : 'light';
-}
-
-function toggleTheme() {
-	const next = !isDark.value;
-	applyTheme(next);
-	localStorage.setItem('todo-theme', next ? 'dark' : 'light');
-}
-
-onMounted(() => {
-	const saved = localStorage.getItem('todo-theme');
-	if (saved) {
-		applyTheme(saved === 'dark');
-	} else {
-		applyTheme(window.matchMedia?.('(prefers-color-scheme: dark)').matches ?? false);
-	}
-});
 </script>
 
 <template>
 	<v-app>
 		<v-main>
-			<div class="shell">
-				<div class="topbar">
-					<div class="brand">
-						<span class="mark" aria-hidden="true">
-							<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12.5l5 5L20 6.5" /></svg>
+			<header class="topbar">
+				<div class="topbar-inner">
+					<Wordmark tone="dark" />
+					<nav class="nav">
+						<span class="nav-pill">
+							<v-icon icon="mdi-gauge" size="15" />
+							<span>Painel</span>
 						</span>
-						<span class="name">simple<b>Todo</b></span>
-					</div>
-
-					<button
-						class="icon-btn focusable"
-						type="button"
-						:aria-label="isDark ? 'Ativar tema claro' : 'Ativar tema escuro'"
-						:title="isDark ? 'Tema claro' : 'Tema escuro'"
-						@click="toggleTheme"
-					>
-						<v-icon :icon="isDark ? 'mdi-weather-sunny' : 'mdi-weather-night'" size="20" />
-					</button>
+					</nav>
 				</div>
+			</header>
 
+			<main class="content">
 				<TodoView />
-
-				<p class="pagefoot">simpleTodo · laboratório MEVN</p>
-			</div>
+			</main>
 		</v-main>
 	</v-app>
 </template>
 
 <style scoped>
-.shell {
-	max-width: 680px;
-	margin: 0 auto;
-	padding: clamp(28px, 6vw, 72px) 20px 96px;
-}
-
 .topbar {
+	position: sticky;
+	top: 0;
+	z-index: 30;
+	background: rgba(0, 0, 0, 0.9);
+	backdrop-filter: blur(8px);
+	border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.topbar-inner {
+	max-width: var(--content-max);
+	margin: 0 auto;
+	height: var(--header-h);
+	padding: 0 24px;
 	display: flex;
 	align-items: center;
-	justify-content: space-between;
-	margin-bottom: 34px;
+	gap: 16px;
 }
 
-.brand {
+.nav {
+	margin-left: auto;
 	display: flex;
 	align-items: center;
-	gap: 11px;
+	gap: 8px;
 }
 
-.brand .mark {
-	width: 34px;
-	height: 34px;
-	border-radius: 10px;
-	display: grid;
-	place-items: center;
-	background: linear-gradient(150deg, var(--accent), var(--accent-strong));
-	box-shadow: 0 6px 16px -6px var(--accent-ring);
-	color: #fff;
+.nav-pill {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	background: var(--color-white);
+	color: var(--color-ink);
+	border-radius: var(--radius-pill);
+	padding: 0.5rem 0.9rem;
+	font-family: var(--font-head);
+	font-weight: 700;
+	font-size: var(--fs-xs);
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
 }
 
-.brand .name {
-	font-weight: 800;
-	letter-spacing: -0.02em;
-	font-size: 15px;
-	color: var(--text);
+.content {
+	max-width: var(--content-max);
+	margin: 0 auto;
+	padding: 48px 24px;
 }
 
-.brand .name b {
-	color: var(--accent);
-}
-
-.icon-btn {
-	width: 38px;
-	height: 38px;
-	border-radius: 11px;
-	border: 1px solid var(--border);
-	background: var(--surface);
-	color: var(--text-2);
-	display: grid;
-	place-items: center;
-	cursor: pointer;
-	transition: transform 0.18s var(--ease-out), color 0.18s, border-color 0.18s;
-}
-
-.icon-btn:hover {
-	color: var(--text);
-	border-color: var(--border-strong);
-	transform: translateY(-1px);
-}
-
-.icon-btn:active {
-	transform: translateY(0);
-}
-
-.pagefoot {
-	text-align: center;
-	margin-top: 30px;
-	font-size: 12px;
-	color: var(--text-3);
-	font-weight: 600;
+@media (max-width: 640px) {
+	.content {
+		padding: 32px 16px;
+	}
+	.topbar-inner {
+		padding: 0 16px;
+	}
 }
 </style>

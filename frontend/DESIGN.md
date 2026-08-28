@@ -1,59 +1,89 @@
 # DESIGN.md — simpleTodo (frontend)
 
-Sistema de design do frontend, derivado do que está construído em `src/`.
-Direção: **"Console de foco"** (modo Operate). O ato central e recompensado é
-**concluir** uma tarefa.
+Sistema de design do frontend, **portado do `simpleTodo_fastAPI`** (design
+language do portfólio, `portifolio_html/design.md`). Paleta monocromática
+(preto / branco / cinzas), tipografia fluida com Montserrat + Raleway, header e
+footer escuros fixos com conteúdo claro entre eles, cards brancos com elevação
+suave, badges pill e animação de entrada. A única cor vem das **lâmpadas de
+estado**, tratadas como accent funcional — do mesmo modo que o portfólio só
+colore ícones de marca.
 
 ## Fundamentos
 
-- **Stack:** Vue 3 (`<script setup>`) + Vuetify 3 (sistema de tema, ícones MDI,
-  shell `v-app`). Controles com craft (checkbox, filtros, composer) são
-  elementos próprios estilizados pelos tokens, não componentes default do
-  Material — para atingir a interação-assinatura sem lutar contra os defaults.
-- **Fonte:** Manrope (400–800), uma única família, com **algarismos tabulares**
-  (`.num`) em contadores, datas e progresso.
-- **Cena de uso:** foco/estudo; tema claro e escuro em paridade, escolhido por
-  `prefers-color-scheme` e persistido em `localStorage`.
+- **Stack:** Vue 3 (`<script setup>`) + Vuetify 3 (shell `v-app`, ícones MDI).
+  Os controles com craft (composer, filtros, cards) são elementos próprios
+  estilizados pelos tokens em `src/styles/app.css`, não componentes default do
+  Material.
+- **Fontes:** self-hosted via `@fontsource` (sem CDN). **Montserrat**
+  (`--font-head`, 400/700/900) em títulos, rótulos, botões, badges e leituras
+  numéricas — caixa alta + tracking. **Raleway** (`--font-body`, 400/600/700)
+  no texto corrido. Numerais tabulares (`tnum` / `.num`) em contagens e datas.
+- **Tema:** **light-only** (`color-scheme: light`), como o portfólio.
 
-## Tokens
+## Paleta
 
-Definidos em `src/styles/app.css`, chaveados por `.v-theme--light` / `.v-theme--dark`.
+Monocromática. Use sempre os aliases semânticos (tokens em `src/styles/app.css`).
 
-| Papel | Claro | Escuro |
+| Token | Valor | Uso |
 |---|---|---|
-| Acento (ação/seleção) | `#5b5bd6` | `#7d7cf0` |
-| Acento forte | `#4a4ac4` | `#9291f4` |
-| Sucesso (concluído) | `#1f9d63` | `#34c07d` |
-| Perigo (excluir) | `#e0464b` | `#f16b6f` |
-| Superfície | `#ffffff` | `#14171f` |
-| Texto / 2 / 3 | `#171a21` / `#565d6d` / `#8b92a3` | `#eef1f7` / `#a3abbd` / `#6f7789` |
-| Borda / forte | `#e3e6ee` / `#d3d8e4` | `#262b37` / `#333a49` |
+| `--color-ink` | `#1a1a1a` | texto primário + accent escuro (botões primários, mark) |
+| `--color-cloud` | `#e5e5e5` | fundo da página |
+| `--surface` | `#ffffff` | cards / superfícies elevadas |
+| `--text-muted-on-light` | `#5c5c5c` | texto secundário sobre fundo claro (AA) |
+| `--color-mist` | `#999999` | cinza decorativo (divisores, scrollbar) |
 
-Estratégia de cor: **Restrained** (neutros slate + um acento iris). Sucesso e
-perigo são semânticos e estreitos, nunca decorativos. Fundo com gradiente radial
-sutil no topo. Raio base 16px; `--ease-spring` e `--ease-out` para o movimento.
+**Lâmpadas de estado** (único accent cromático — carrega significado):
 
-## Componentes (`src/components`)
+| Estado | Token | Cor |
+|---|---|---|
+| Standby | `--lamp-draft` | `#7a8593` cinza |
+| Pendente / na fila | `--lamp-todo` | `#4a9fd4` azul |
+| Em operação | `--lamp-doing` | `#f2a41c` âmbar (pulsante) |
+| Concluída | `--lamp-done` | `#4bbd6b` verde |
+| Descartada | `--lamp-trash` | `#df5140` vermelho |
 
-- **ProgressHeader** — título, data por extenso, medidor de progresso que sobe
-  ao concluir.
-- **TodoComposer** — input em pílula elevada; botão de adicionar desabilitado
-  quando vazio; estado `busy`.
-- **TodoFilters** — controle segmentado (Todas / Pendentes / Concluídas) com
-  contadores tabulares.
-- **TodoItem** — linha com **checkbox circular (preenchimento em mola)** e
-  **título com risco desenhado** (`background-size` animado, não instantâneo);
-  ações reveladas no hover, sempre visíveis no toque.
-- **EmptyState** — ensina o próximo passo conforme o filtro ativo.
+## Componentes de estilo (`src/styles/app.css`)
 
-## Estados e movimento
+- `.card` / `.plate` — superfície branca, `--radius-md`, borda sutil,
+  `--shadow-sm`. `.card-lift` adiciona a elevação de hover
+  (`translateY(-6px)` + `--shadow-lg`) dos cards de projeto do portfólio.
+- `.section-title` + `.divider` — cabeçalho de seção (Montserrat black caixa
+  alta) com o traço-acento curto.
+- `.pill` + `.dot` — badge neutro com ponto colorido de estado.
+- `.btn` / `.btn-primary` (ink sólido) / `.btn-outline` (contorno).
+- `.field` — input claro com foco em ink.
+- `.reveal` → `.is-visible` — animação de entrada via diretiva `v-reveal`
+  (`src/plugins/reveal.js`; IntersectionObserver com fallback e reduced-motion).
 
-- Carregamento: **skeleton** (não spinner). Erro: banner inline dispensável.
-  Vazio, hover, foco por teclado, disabled e `busy` cobertos.
-- Atualizações **otimistas** (concluir/excluir/limpar) com reversão em falha.
-- Um momento autoral: a conclusão (mola + risco + progresso). Transições de
-  lista para entrar/sair/reordenar. `prefers-reduced-motion` respeitado.
-- Superfícies do navegador tematizadas: seleção, scrollbar e anel de foco.
+## Componentes Vue (`src/components`)
+
+- **Wordmark** — mark monocromático (tile ink/branco + medidor), prop `tone`
+  (`dark` no header/footer) e `compact`.
+- **StateLamp** — ponto de estado genérico por **cor** (props `color`, `pulse`).
+- **ProgressHeader** — cabeçalho de seção: título + divider + contagens +
+  barra de progresso monocromática (ink).
+- **TodoComposer** — card com `field` + `btn-primary` (ink) para criar tarefa.
+- **TodoFilters** — filtro estilo *ribbon*: chips com lâmpada + rótulo +
+  contagem (Todas / Pendentes / Concluídas).
+- **TodoItem** — card de tarefa estilo projeto: pill de estado clicável
+  (lâmpada + label), título Montserrat caixa alta (riscado + verde quando
+  concluída), data da criação e ações rápidas (concluir / excluir com
+  confirmação).
+- **EmptyState** — card centrado com divider + section-title conforme o filtro.
+
+## Layout & ordem
+
+- Header e footer escuros (fixos), conteúdo claro entre eles — padrão do
+  portfólio. `max-width` 1120px.
+- Grid do board: `auto-fill` + `minmax(280px, 1fr)`, gap `--space-5`.
+- Mais recentes primeiro (a API retorna ordenado por criação desc).
+
+## Acessibilidade & movimento
+
+- Foco visível em ink (`:focus-visible`), contraste AA para texto secundário
+  (`--text-muted-on-light`).
+- Superfícies do navegador temáticas: seleção, scrollbar, caret.
+- Tudo colapsa sob `prefers-reduced-motion: reduce` (reveal, pulso, transições).
 
 ## Integração
 

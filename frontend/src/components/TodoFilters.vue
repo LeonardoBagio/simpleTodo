@@ -1,4 +1,6 @@
 <script setup>
+import StateLamp from './StateLamp.vue';
+
 defineProps({
 	modelValue: { type: String, default: 'all' },
 	counts: {
@@ -9,68 +11,86 @@ defineProps({
 const emit = defineEmits(['update:modelValue']);
 
 const tabs = [
-	{ key: 'all', label: 'Todas' },
-	{ key: 'active', label: 'Pendentes' },
-	{ key: 'done', label: 'Concluídas' },
+	{ key: 'all', label: 'Todas', color: '#999999' },
+	{ key: 'active', label: 'Pendentes', color: '#4a9fd4' },
+	{ key: 'done', label: 'Concluídas', color: '#4bbd6b' },
 ];
 </script>
 
 <template>
-	<div class="filters" role="tablist" aria-label="Filtro de tarefas">
+	<div class="ribbon" role="tablist" aria-label="Filtro de tarefas">
 		<button
 			v-for="tab in tabs"
 			:key="tab.key"
-			class="focusable"
+			class="chip"
+			:class="{ active: modelValue === tab.key }"
 			role="tab"
 			type="button"
 			:aria-selected="modelValue === tab.key"
 			@click="emit('update:modelValue', tab.key)"
 		>
-			{{ tab.label }}
+			<StateLamp :color="tab.color" :size="9" />
+			<span class="label">{{ tab.label }}</span>
 			<span class="count num">{{ counts[tab.key] }}</span>
 		</button>
 	</div>
 </template>
 
 <style scoped>
-.filters {
-	display: inline-flex;
-	gap: 2px;
-	padding: 4px;
-	background: var(--surface-inset);
-	border-radius: 12px;
-	margin-bottom: 14px;
+.ribbon {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
 }
 
-.filters button {
-	border: 0;
-	background: transparent;
-	color: var(--text-2);
-	font: inherit;
-	font-weight: 700;
-	font-size: 13px;
-	padding: 7px 14px;
-	border-radius: 9px;
-	cursor: pointer;
-	transition: color 0.18s, background 0.18s, box-shadow 0.18s;
+.chip {
 	display: inline-flex;
 	align-items: center;
-	gap: 7px;
-}
-
-.filters button .count {
-	font-size: 11px;
-	font-weight: 700;
-	color: var(--text-3);
-}
-
-.filters button[aria-selected='true'] {
+	gap: 8px;
 	background: var(--surface);
-	color: var(--text);
-	box-shadow: var(--shadow-1);
+	border: 1px solid var(--border-subtle);
+	border-radius: var(--radius-pill);
+	padding: 0.42rem 0.85rem;
+	cursor: pointer;
+	transition:
+		border-color 0.2s var(--ease),
+		box-shadow 0.2s var(--ease),
+		background 0.2s var(--ease);
 }
 
-.filters button[aria-selected='true'] .count {
-	color: var(--accent);
+.chip:hover {
+	border-color: var(--border-strong);
+}
+
+.chip .label {
+	font-family: var(--font-head);
+	font-weight: 700;
+	font-size: var(--fs-xs);
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
+	color: var(--text-muted-on-light);
+}
+
+.chip .count {
+	font-family: var(--font-head);
+	font-weight: 700;
+	font-size: 11px;
+	color: var(--color-mist);
+	min-width: 1ch;
+	text-align: center;
+}
+
+.chip.active {
+	background: var(--color-ink);
+	border-color: var(--color-ink);
+	box-shadow: var(--shadow-sm);
+}
+
+.chip.active .label {
+	color: var(--color-white);
+}
+
+.chip.active .count {
+	color: rgba(255, 255, 255, 0.7);
 }
 </style>

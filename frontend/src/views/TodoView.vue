@@ -9,6 +9,7 @@ import EmptyState from '../components/EmptyState.vue';
 
 const todos = ref([]);
 const loading = ref(true);
+const loaded = ref(false);
 const error = ref('');
 const adding = ref(false);
 const filter = ref('all');
@@ -35,6 +36,7 @@ async function load() {
 	error.value = '';
 	try {
 		todos.value = await api.getAll();
+		loaded.value = true;
 	} catch (e) {
 		error.value = 'Não foi possível carregar as tarefas. Verifique se a API está no ar.';
 	} finally {
@@ -99,80 +101,117 @@ onMounted(load);
 </script>
 
 <template>
-	<ProgressHeader :total="total" :done="doneCount" />
+	<div class="board">
+		<ProgressHeader :total="total" :done="doneCount" />
 
-	<TodoComposer :busy="adding" @add="addTodo" />
+		<TodoComposer :busy="adding" @add="addTodo" />
 
-	<TodoFilters v-model="filter" :counts="counts" />
-
-	<v-expand-transition>
-		<div v-if="error" class="banner" role="alert">
-			<v-icon icon="mdi-alert-circle-outline" size="18" />
-			<span>{{ error }}</span>
-			<button class="banner-close" type="button" aria-label="Dispensar aviso" @click="error = ''">
-				<v-icon icon="mdi-close" size="16" />
+		<div class="controls">
+			<TodoFilters v-model="filter" :counts="counts" />
+			<button
+				v-if="doneCount > 0"
+				class="btn btn-outline clear-btn"
+				type="button"
+				@click="clearDone"
+			>
+				<v-icon icon="mdi-broom" size="15" />
+				<span>Limpar concluídas</span>
 			</button>
 		</div>
-	</v-expand-transition>
 
-	<div class="card">
-		<ul v-if="loading" class="list" aria-hidden="true">
-			<li v-for="n in 4" :key="n" class="skeleton-row">
-				<span class="sk sk-check"></span>
-				<span class="sk sk-line" :style="{ width: 55 + (n % 3) * 12 + '%' }"></span>
-			</li>
-		</ul>
+		<v-expand-transition>
+			<div v-if="error" class="banner" role="alert">
+				<v-icon icon="mdi-alert-circle-outline" size="18" />
+				<span>{{ error }}</span>
+				<button class="banner-close" type="button" aria-label="Dispensar aviso" @click="error = ''">
+					<v-icon icon="mdi-close" size="16" />
+				</button>
+			</div>
+		</v-expand-transition>
 
-		<EmptyState v-else-if="filtered.length === 0" :filter="filter" />
+		<section aria-label="Tarefas">
+			<div v-if="loading && !loaded" class="grid">
+				<div v-for="n in 6" :key="n" class="skeleton" />
+			</div>
 
-		<transition-group v-else tag="ul" name="list" class="list">
-			<TodoItem
-				v-for="todo in filtered"
-				:key="todo._id"
-				:todo="todo"
-				:busy="busyIds.has(todo._id)"
-				@toggle="toggleTodo"
-				@remove="removeTodo"
-			/>
-		</transition-group>
+			<EmptyState v-else-if="filtered.length === 0" :filter="filter" />
 
-		<div v-if="!loading && total > 0" class="listfoot">
-			<span><span class="num">{{ pending }}</span> {{ pending === 1 ? 'pendente' : 'pendentes' }}</span>
-			<button v-if="doneCount > 0" class="clear" type="button" @click="clearDone">
-				Limpar concluídas
-			</button>
-		</div>
+			<transition-group v-else tag="div" name="list" class="grid">
+				<TodoItem
+					v-for="(todo, i) in filtered"
+					:key="todo._id"
+					v-reveal="Math.min(i * 55, 330)"
+					:todo="todo"
+					:busy="busyIds.has(todo._id)"
+					@toggle="toggleTodo"
+					@remove="removeTodo"
+				/>
+			</transition-group>
+		</section>
 	</div>
 </template>
 
 <style scoped>
-.card {
-	background: var(--surface);
-	border: 1px solid var(--border);
-	border-radius: var(--radius);
-	box-shadow: var(--shadow-2);
-	overflow: hidden;
+.board {
+	display: flex;
+	flex-direction: column;
+	gap: 28px;
 }
 
-.list {
-	list-style: none;
-	padding: 0;
-	margin: 0;
-	position: relative;
+.controls {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 16px;
+	flex-wrap: wrap;
+}
+
+.clear-btn {
+	font-size: var(--fs-xs);
+	padding: 0.5rem 0.95rem;
+}
+
+.grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+	gap: var(--space-5);
+	align-items: start;
+}
+
+.skeleton {
+	height: 168px;
+	border-radius: var(--radius-md);
+	border: 1px solid var(--border-subtle);
+	background: linear-gradient(
+		90deg,
+		rgba(0, 0, 0, 0.03) 0%,
+		rgba(0, 0, 0, 0.06) 50%,
+		rgba(0, 0, 0, 0.03) 100%
+	);
+	background-size: 200% 100%;
+	animation: shimmer 1.3s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+	0% {
+		background-position: 200% 0;
+	}
+	100% {
+		background-position: -200% 0;
+	}
 }
 
 .banner {
 	display: flex;
 	align-items: center;
 	gap: 10px;
-	background: var(--danger-weak);
-	color: var(--danger);
-	border: 1px solid color-mix(in srgb, var(--danger) 24%, transparent);
+	background: color-mix(in srgb, var(--lamp-trash) 10%, var(--surface));
+	color: var(--lamp-trash);
+	border: 1px solid color-mix(in srgb, var(--lamp-trash) 30%, transparent);
 	border-radius: var(--radius-sm);
 	padding: 11px 12px 11px 14px;
-	font-size: 13.5px;
+	font-size: var(--fs-sm);
 	font-weight: 600;
-	margin-bottom: 14px;
 }
 
 .banner span {
@@ -195,82 +234,7 @@ onMounted(load);
 
 .banner-close:hover {
 	opacity: 1;
-	background: color-mix(in srgb, var(--danger) 14%, transparent);
-}
-
-.listfoot {
-	display: flex;
-	align-items: center;
-	justify-content: space-between;
-	padding: 13px 16px;
-	background: var(--surface-2);
-	border-top: 1px solid var(--border);
-	font-size: 12.5px;
-	color: var(--text-2);
-	font-weight: 600;
-}
-
-.clear {
-	border: 0;
-	background: transparent;
-	color: var(--text-3);
-	font: inherit;
-	font-weight: 700;
-	font-size: 12.5px;
-	cursor: pointer;
-	padding: 4px 6px;
-	border-radius: 7px;
-	transition: color 0.16s, background 0.16s;
-}
-
-.clear:hover {
-	color: var(--danger);
-	background: var(--danger-weak);
-}
-
-.skeleton-row {
-	display: flex;
-	align-items: center;
-	gap: 14px;
-	padding: 15px 16px;
-	border-bottom: 1px solid var(--border);
-}
-
-.skeleton-row:last-child {
-	border-bottom: 0;
-}
-
-.sk {
-	display: block;
-	border-radius: 8px;
-	background: linear-gradient(
-		90deg,
-		var(--surface-inset) 0%,
-		var(--surface-2) 50%,
-		var(--surface-inset) 100%
-	);
-	background-size: 200% 100%;
-	animation: shimmer 1.3s ease-in-out infinite;
-}
-
-.sk-check {
-	width: 24px;
-	height: 24px;
-	border-radius: 50%;
-	flex: none;
-}
-
-.sk-line {
-	height: 12px;
-}
-
-@keyframes shimmer {
-	0% {
-		background-position: 200% 0;
-	}
-	100% {
-		background-position: -200% 0;
-	}
+	background: color-mix(in srgb, var(--lamp-trash) 14%, transparent);
 }
 
 .list-enter-from {
@@ -279,26 +243,25 @@ onMounted(load);
 }
 
 .list-enter-active {
-	transition: opacity 0.25s var(--ease-out), transform 0.25s var(--ease-out);
+	transition: opacity 0.25s var(--ease), transform 0.25s var(--ease);
 }
 
 .list-leave-active {
 	transition: opacity 0.2s ease, transform 0.2s ease;
 	position: absolute;
-	width: 100%;
 }
 
 .list-leave-to {
 	opacity: 0;
-	transform: translateX(-10px);
+	transform: scale(0.96);
 }
 
 .list-move {
-	transition: transform 0.28s var(--ease-out);
+	transition: transform 0.28s var(--ease);
 }
 
 @media (prefers-reduced-motion: reduce) {
-	.sk {
+	.skeleton {
 		animation: none;
 	}
 	.list-enter-active,

@@ -1,6 +1,7 @@
 <script setup>
-import { computed } from 'vue';
+import { ref, computed } from 'vue';
 import { relativeTime } from '../utils/time';
+import StateLamp from './StateLamp.vue';
 
 const props = defineProps({
 	todo: { type: Object, required: true },
@@ -8,197 +9,214 @@ const props = defineProps({
 });
 const emit = defineEmits(['toggle', 'remove']);
 
+const confirming = ref(false);
 const when = computed(() => relativeTime(props.todo.createdAt));
+
+const status = computed(() =>
+	props.todo.completed
+		? { label: 'Concluída', color: 'var(--lamp-done)' }
+		: { label: 'Pendente', color: 'var(--lamp-todo)' },
+);
 </script>
 
 <template>
-	<li class="task" :class="{ done: todo.completed, busy }">
-		<button
-			class="check focusable"
-			type="button"
-			role="checkbox"
-			:aria-checked="todo.completed"
-			:aria-label="todo.completed ? 'Reabrir tarefa' : 'Concluir tarefa'"
-			@click="emit('toggle', todo)"
-		>
-			<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round">
-				<path d="M5 12.5l4.2 4.2L19 6.5" />
-			</svg>
-		</button>
+	<article class="task card card-lift" :class="{ done: todo.completed, busy }">
+		<div class="task-head">
+			<button
+				class="state-pill"
+				type="button"
+				:aria-pressed="todo.completed"
+				:title="todo.completed ? 'Reabrir tarefa' : 'Concluir tarefa'"
+				@click="emit('toggle', todo)"
+			>
+				<StateLamp :color="status.color" :size="9" />
+				<span>{{ status.label }}</span>
+			</button>
 
-		<div class="task-body">
-			<span class="task-title">{{ todo.title }}</span>
-			<div class="task-meta">
-				<span v-if="when">{{ when }}</span>
+			<div v-if="!confirming" class="actions">
+				<button
+					class="icon-btn"
+					type="button"
+					:disabled="busy"
+					:title="todo.completed ? 'Marcar como pendente' : 'Concluir'"
+					:aria-label="todo.completed ? 'Marcar como pendente' : 'Concluir'"
+					@click="emit('toggle', todo)"
+				>
+					<v-icon :icon="todo.completed ? 'mdi-undo-variant' : 'mdi-check'" size="17" />
+				</button>
+				<button
+					class="icon-btn danger"
+					type="button"
+					:disabled="busy"
+					title="Excluir tarefa"
+					aria-label="Excluir tarefa"
+					@click="confirming = true"
+				>
+					<v-icon icon="mdi-trash-can-outline" size="16" />
+				</button>
+			</div>
+
+			<div v-else class="confirm">
+				<span class="engraved q">Excluir?</span>
+				<button class="yes" type="button" :disabled="busy" @click="emit('remove', todo)">Sim</button>
+				<button class="no" type="button" @click="confirming = false">Não</button>
 			</div>
 		</div>
 
-		<div class="task-actions">
-			<button
-				class="del focusable"
-				type="button"
-				aria-label="Excluir tarefa"
-				@click="emit('remove', todo)"
-			>
-				<v-icon icon="mdi-trash-can-outline" size="18" />
-			</button>
+		<h3 class="task-title">{{ todo.title }}</h3>
+
+		<div class="task-foot">
+			<span v-if="when" class="when num" :title="when">{{ when }}</span>
 		</div>
-	</li>
+	</article>
 </template>
 
 <style scoped>
 .task {
+	padding: 20px;
 	display: flex;
-	align-items: center;
+	flex-direction: column;
 	gap: 14px;
-	padding: 15px 16px;
-	border-bottom: 1px solid var(--border);
-	position: relative;
-	transition: background 0.18s;
-}
-
-.task:last-child {
-	border-bottom: 0;
-}
-
-.task:hover {
-	background: var(--surface-2);
 }
 
 .task.busy {
-	opacity: 0.6;
+	opacity: 0.55;
 	pointer-events: none;
 }
 
-.check {
-	flex: none;
-	width: 24px;
-	height: 24px;
-	border-radius: 50%;
-	border: 2px solid var(--border-strong);
-	background: var(--surface);
+.task.done {
+	background: linear-gradient(180deg, rgba(75, 189, 107, 0.06), var(--surface) 55%);
+}
+
+.task-head {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+}
+
+.state-pill {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	background: var(--bg-light);
+	border: 0;
+	border-radius: var(--radius-pill);
+	padding: 0.3rem 0.7rem;
+	font-family: var(--font-head);
+	font-weight: 700;
+	font-size: var(--fs-xs);
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+	color: var(--text-dark);
+	cursor: pointer;
+	transition: background 0.2s var(--ease);
+}
+
+.state-pill:hover {
+	background: rgba(0, 0, 0, 0.1);
+}
+
+.actions {
+	display: flex;
+	align-items: center;
+	gap: 4px;
+}
+
+.icon-btn {
+	width: 32px;
+	height: 32px;
+	border-radius: var(--radius-sm);
+	border: 0;
+	background: transparent;
+	color: var(--text-muted-on-light);
 	cursor: pointer;
 	display: grid;
 	place-items: center;
-	transition: border-color 0.2s, background 0.2s var(--ease-spring);
+	transition: background 0.16s, color 0.16s;
 }
 
-.check:hover {
-	border-color: var(--accent);
+.icon-btn:hover:not(:disabled) {
+	background: var(--bg-light);
+	color: var(--color-ink);
 }
 
-.check svg {
-	width: 13px;
-	height: 13px;
-	color: #fff;
-	opacity: 0;
-	transform: scale(0.4);
-	transition: opacity 0.18s, transform 0.28s var(--ease-spring);
+.icon-btn.danger:hover:not(:disabled) {
+	background: color-mix(in srgb, var(--lamp-trash) 12%, transparent);
+	color: var(--lamp-trash);
 }
 
-.check svg path {
-	stroke-dasharray: 20;
-	stroke-dashoffset: 20;
-	transition: stroke-dashoffset 0.3s 0.05s var(--ease-out);
+.icon-btn:disabled {
+	opacity: 0.4;
+	cursor: not-allowed;
 }
 
-.done .check {
-	background: var(--success);
-	border-color: var(--success);
-	animation: pop 0.34s var(--ease-spring);
+.confirm {
+	display: flex;
+	align-items: center;
+	gap: 6px;
 }
 
-.done .check svg {
-	opacity: 1;
-	transform: scale(1);
+.confirm .q {
+	font-size: 9px;
+	color: var(--text-muted-on-light);
 }
 
-.done .check svg path {
-	stroke-dashoffset: 0;
+.confirm .yes,
+.confirm .no {
+	border-radius: var(--radius-sm);
+	padding: 4px 8px;
+	font-family: var(--font-head);
+	font-size: 10px;
+	font-weight: 700;
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
+	cursor: pointer;
 }
 
-@keyframes pop {
-	0% {
-		transform: scale(1);
-	}
-	45% {
-		transform: scale(1.22);
-	}
-	100% {
-		transform: scale(1);
-	}
+.confirm .yes {
+	border: 0;
+	background: var(--lamp-trash);
+	color: var(--color-white);
 }
 
-.task-body {
-	flex: 1;
-	min-width: 0;
+.confirm .no {
+	border: 1px solid var(--border-strong);
+	background: transparent;
+	color: var(--text-muted-on-light);
+}
+
+.confirm .no:hover {
+	color: var(--color-ink);
 }
 
 .task-title {
-	font-size: 15px;
-	font-weight: 600;
-	color: var(--text);
-	letter-spacing: -0.01em;
-	display: inline;
-	background-image: linear-gradient(currentColor, currentColor);
-	background-repeat: no-repeat;
-	background-position: 0 60%;
-	background-size: 0% 1.5px;
-	transition: background-size 0.35s var(--ease-out), color 0.3s;
+	font-family: var(--font-head);
+	font-weight: 700;
+	font-size: 16px;
+	text-transform: uppercase;
+	letter-spacing: 0.02em;
+	line-height: 1.35;
+	color: var(--color-ink);
 	overflow-wrap: anywhere;
 }
 
-.done .task-title {
-	color: var(--text-3);
-	background-size: 100% 1.5px;
+.task.done .task-title {
+	color: var(--text-muted-on-light);
+	text-decoration: line-through;
+	text-decoration-color: color-mix(in srgb, var(--lamp-done) 70%, transparent);
 }
 
-.task-meta {
-	font-size: 12px;
-	color: var(--text-3);
-	margin-top: 3px;
-	font-weight: 500;
-	min-height: 14px;
-}
-
-.task-actions {
-	flex: none;
+.task-foot {
 	display: flex;
-	gap: 4px;
-	opacity: 0;
-	transform: translateX(4px);
-	transition: opacity 0.18s, transform 0.18s;
+	align-items: center;
+	justify-content: flex-end;
 }
 
-.task:hover .task-actions,
-.task:focus-within .task-actions {
-	opacity: 1;
-	transform: none;
-}
-
-.del {
-	width: 34px;
-	height: 34px;
-	border-radius: 9px;
-	border: 1px solid transparent;
-	background: transparent;
-	color: var(--text-3);
-	cursor: pointer;
-	display: grid;
-	place-items: center;
-	transition: background 0.16s, color 0.16s, border-color 0.16s;
-}
-
-.del:hover {
-	background: var(--danger-weak);
-	color: var(--danger);
-	border-color: color-mix(in srgb, var(--danger) 26%, transparent);
-}
-
-@media (hover: none) {
-	.task-actions {
-		opacity: 1;
-		transform: none;
-	}
+.when {
+	font-family: var(--font-head);
+	font-size: 11px;
+	font-weight: 600;
+	color: var(--text-muted-on-light);
 }
 </style>

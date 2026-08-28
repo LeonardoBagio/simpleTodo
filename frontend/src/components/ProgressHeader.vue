@@ -1,6 +1,5 @@
 <script setup>
 import { computed } from 'vue';
-import { todayLabel } from '../utils/time';
 
 const props = defineProps({
 	total: { type: Number, default: 0 },
@@ -9,22 +8,21 @@ const props = defineProps({
 
 const pending = computed(() => props.total - props.done);
 const pct = computed(() => (props.total ? Math.round((props.done / props.total) * 100) : 0));
-const pendingLabel = computed(() =>
-	pending.value === 1 ? '1 pendente' : `${pending.value} pendentes`,
-);
-const date = todayLabel();
 </script>
 
 <template>
 	<header class="head">
-		<h1 class="title">Suas tarefas</h1>
-		<p class="subtitle"><b>{{ pendingLabel }}</b> · {{ date }}</p>
+		<h1 class="section-title title">Painel de tarefas</h1>
+		<span class="divider"></span>
+		<p class="section-desc counts">
+			<span class="num">{{ pending }}</span> ativa(s) ·
+			<span class="num">{{ done }}</span> concluída(s) ·
+			<span class="num">{{ total }}</span> no total
+		</p>
 
-		<div class="progress">
+		<div v-if="total > 0" class="progress">
 			<div class="progress-top">
-				<span class="lead">
-					<span class="num">{{ done }}</span> de <span class="num">{{ total }}</span> concluídas
-				</span>
+				<span class="eyebrow lead">Progresso</span>
 				<span class="pct num">{{ pct }}%</span>
 			</div>
 			<div class="track">
@@ -36,64 +34,54 @@ const date = todayLabel();
 
 <style scoped>
 .head {
-	margin-bottom: 26px;
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
 }
 
 .title {
-	font-size: clamp(30px, 5vw, 40px);
-	font-weight: 800;
-	letter-spacing: -0.035em;
-	line-height: 1.05;
-	color: var(--text);
+	font-size: clamp(1.6rem, 1.2rem + 1.6vw, 2.2rem);
 }
 
-.subtitle {
-	color: var(--text-2);
-	font-size: 14.5px;
-	margin-top: 8px;
-	font-weight: 500;
-}
-
-.subtitle b {
-	color: var(--text);
-	font-weight: 700;
+.counts {
+	margin: 0;
 }
 
 .progress {
-	margin-top: 22px;
+	margin-top: 6px;
+	max-width: 340px;
 }
 
 .progress-top {
 	display: flex;
 	align-items: baseline;
 	justify-content: space-between;
-	margin-bottom: 9px;
+	margin-bottom: 8px;
 }
 
 .progress-top .lead {
-	font-size: 13px;
-	font-weight: 700;
-	color: var(--text-2);
+	font-size: 10px;
+	color: var(--text-muted-on-light);
 }
 
 .progress-top .pct {
+	font-family: var(--font-head);
 	font-size: 13px;
 	font-weight: 700;
-	color: var(--accent);
+	color: var(--color-ink);
 }
 
 .track {
-	height: 8px;
-	border-radius: 20px;
-	background: var(--surface-inset);
+	height: 6px;
+	border-radius: var(--radius-pill);
+	background: rgba(0, 0, 0, 0.08);
 	overflow: hidden;
-	box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.06);
 }
 
 .bar {
 	height: 100%;
-	border-radius: 20px;
-	background: linear-gradient(90deg, var(--accent), var(--accent-strong));
-	transition: width 0.55s var(--ease-out);
+	border-radius: var(--radius-pill);
+	background: var(--color-ink);
+	transition: width 0.55s var(--ease);
 }
 </style>
