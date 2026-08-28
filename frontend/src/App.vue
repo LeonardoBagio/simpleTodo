@@ -1,133 +1,151 @@
 <script setup>
-import { ref, onMounted } from 'vue';
-import { useTheme } from 'vuetify';
-import TodoView from './views/TodoView.vue';
+import { onMounted } from 'vue';
+import Wordmark from './components/Wordmark.vue';
+import { useCatalog } from './stores/catalog';
 
-const theme = useTheme();
-const isDark = ref(false);
+const nav = [
+	{ to: '/painel', label: 'Painel', icon: 'mdi-view-dashboard-outline' },
+	{ to: '/dashboard', label: 'Dashboard', icon: 'mdi-chart-box-outline' },
+	{ to: '/categorias', label: 'Categoria', icon: 'mdi-tag-multiple-outline' },
+	{ to: '/status', label: 'Status', icon: 'mdi-format-list-bulleted-type' },
+];
 
-function applyTheme(dark) {
-	isDark.value = dark;
-	theme.global.name.value = dark ? 'dark' : 'light';
-}
-
-function toggleTheme() {
-	const next = !isDark.value;
-	applyTheme(next);
-	localStorage.setItem('todo-theme', next ? 'dark' : 'light');
-}
-
-onMounted(() => {
-	const saved = localStorage.getItem('todo-theme');
-	if (saved) {
-		applyTheme(saved === 'dark');
-	} else {
-		applyTheme(window.matchMedia?.('(prefers-color-scheme: dark)').matches ?? false);
-	}
-});
+const catalog = useCatalog();
+onMounted(() => catalog.fetchAll());
 </script>
 
 <template>
 	<v-app>
 		<v-main>
-			<div class="shell">
-				<div class="topbar">
+			<div class="layout">
+				<aside class="sidebar">
 					<div class="brand">
-						<span class="mark" aria-hidden="true">
-							<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12.5l5 5L20 6.5" /></svg>
-						</span>
-						<span class="name">simple<b>Todo</b></span>
+						<Wordmark tone="dark" />
 					</div>
+					<nav class="menu">
+						<RouterLink
+							v-for="item in nav"
+							:key="item.to"
+							:to="item.to"
+							class="menu-item"
+							active-class="is-active"
+						>
+							<v-icon :icon="item.icon" size="18" />
+							<span>{{ item.label }}</span>
+						</RouterLink>
+					</nav>
+				</aside>
 
-					<button
-						class="icon-btn focusable"
-						type="button"
-						:aria-label="isDark ? 'Ativar tema claro' : 'Ativar tema escuro'"
-						:title="isDark ? 'Tema claro' : 'Tema escuro'"
-						@click="toggleTheme"
-					>
-						<v-icon :icon="isDark ? 'mdi-weather-sunny' : 'mdi-weather-night'" size="20" />
-					</button>
-				</div>
-
-				<TodoView />
-
-				<p class="pagefoot">simpleTodo · laboratório MEVN</p>
+				<main class="content">
+					<RouterView />
+				</main>
 			</div>
 		</v-main>
 	</v-app>
 </template>
 
 <style scoped>
-.shell {
-	max-width: 680px;
-	margin: 0 auto;
-	padding: clamp(28px, 6vw, 72px) 20px 96px;
+.layout {
+	display: flex;
+	align-items: stretch;
+	min-height: 100vh;
 }
 
-.topbar {
+.sidebar {
+	position: sticky;
+	top: 0;
+	align-self: flex-start;
+	height: 100vh;
+	width: 250px;
+	flex: none;
+	background: rgba(0, 0, 0, 0.94);
+	border-right: 1px solid rgba(255, 255, 255, 0.1);
 	display: flex;
-	align-items: center;
-	justify-content: space-between;
-	margin-bottom: 34px;
+	flex-direction: column;
+	gap: 8px;
+	padding: 24px 16px;
 }
 
 .brand {
+	padding: 4px 8px 20px;
+	border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+	margin-bottom: 12px;
+}
+
+.menu {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+}
+
+.menu-item {
 	display: flex;
 	align-items: center;
-	gap: 11px;
+	gap: 12px;
+	padding: 0.7rem 0.85rem;
+	border-radius: var(--radius-sm);
+	font-family: var(--font-head);
+	font-weight: 700;
+	font-size: var(--fs-xs);
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+	color: rgba(255, 255, 255, 0.6);
+	text-decoration: none;
+	transition: background 0.18s var(--ease), color 0.18s var(--ease);
 }
 
-.brand .mark {
-	width: 34px;
-	height: 34px;
-	border-radius: 10px;
-	display: grid;
-	place-items: center;
-	background: linear-gradient(150deg, var(--accent), var(--accent-strong));
-	box-shadow: 0 6px 16px -6px var(--accent-ring);
-	color: #fff;
+.menu-item:hover {
+	background: rgba(255, 255, 255, 0.06);
+	color: rgba(255, 255, 255, 0.92);
 }
 
-.brand .name {
-	font-weight: 800;
-	letter-spacing: -0.02em;
-	font-size: 15px;
-	color: var(--text);
+.menu-item.is-active {
+	background: var(--color-white);
+	color: var(--color-ink);
 }
 
-.brand .name b {
-	color: var(--accent);
+.content {
+	flex: 1;
+	min-width: 0;
+	max-width: var(--content-max);
+	margin: 0 auto;
+	padding: 40px 32px 64px;
+	width: 100%;
 }
 
-.icon-btn {
-	width: 38px;
-	height: 38px;
-	border-radius: 11px;
-	border: 1px solid var(--border);
-	background: var(--surface);
-	color: var(--text-2);
-	display: grid;
-	place-items: center;
-	cursor: pointer;
-	transition: transform 0.18s var(--ease-out), color 0.18s, border-color 0.18s;
-}
-
-.icon-btn:hover {
-	color: var(--text);
-	border-color: var(--border-strong);
-	transform: translateY(-1px);
-}
-
-.icon-btn:active {
-	transform: translateY(0);
-}
-
-.pagefoot {
-	text-align: center;
-	margin-top: 30px;
-	font-size: 12px;
-	color: var(--text-3);
-	font-weight: 600;
+@media (max-width: 860px) {
+	.layout {
+		flex-direction: column;
+	}
+	.sidebar {
+		position: static;
+		height: auto;
+		width: 100%;
+		flex-direction: row;
+		align-items: center;
+		gap: 12px;
+		padding: 12px 16px;
+		overflow-x: auto;
+	}
+	.brand {
+		padding: 0 8px 0 0;
+		border-bottom: 0;
+		border-right: 1px solid rgba(255, 255, 255, 0.08);
+		margin-bottom: 0;
+		flex: none;
+	}
+	.menu {
+		flex-direction: row;
+		gap: 4px;
+	}
+	.menu-item span {
+		display: none;
+	}
+	.menu-item {
+		padding: 0.6rem 0.75rem;
+	}
+	.content {
+		padding: 28px 16px 48px;
+	}
 }
 </style>

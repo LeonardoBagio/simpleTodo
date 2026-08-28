@@ -1,9 +1,19 @@
 const Todo = require('../models/TodoModel');
 const { StatusCodes } = require('http-status-codes');
 
+const POPULATE = [
+	{ path: 'status', select: 'label color group sortOrder' },
+	{ path: 'category', select: 'label color sortOrder' },
+];
+
+function readRef(value) {
+	if (value === null || value === '') return null;
+	return value;
+}
+
 exports.getAll = async (req, res, next) => {
 	try {
-		const all = await Todo.find().sort({ createdAt: -1 });
+		const all = await Todo.find().populate(POPULATE).sort({ createdAt: -1 });
 		res.status(StatusCodes.OK).json(all);
 	} catch (error) {
 		next(error);
@@ -19,11 +29,13 @@ exports.create = async (req, res, next) => {
 				.json({ message: 'O título da tarefa é obrigatório' });
 		}
 
-		const todo = await Todo.create({
+		const created = await Todo.create({
 			title,
-			completed: Boolean(req.body.completed),
+			status: readRef(req.body.status),
+			category: readRef(req.body.category),
 		});
 
+		const todo = await created.populate(POPULATE);
 		res.status(StatusCodes.CREATED).json(todo);
 	} catch (error) {
 		next(error);
@@ -44,8 +56,12 @@ exports.update = async (req, res, next) => {
 			updates.title = title;
 		}
 
-		if (req.body.completed !== undefined) {
-			updates.completed = Boolean(req.body.completed);
+		if (req.body.status !== undefined) {
+			updates.status = readRef(req.body.status);
+		}
+
+		if (req.body.category !== undefined) {
+			updates.category = readRef(req.body.category);
 		}
 
 		if (Object.keys(updates).length === 0) {
@@ -57,7 +73,7 @@ exports.update = async (req, res, next) => {
 		const todo = await Todo.findByIdAndUpdate(req.params.id, updates, {
 			new: true,
 			runValidators: true,
-		});
+		}).populate(POPULATE);
 
 		if (!todo) {
 			return res

@@ -1,99 +1,397 @@
-.v-theme--light {
-	--bg-grad-1: #eef0f4;
-	--bg-grad-2: #e7e9ef;
-	--surface: #ffffff;
-	--surface-2: #f7f8fb;
-	--surface-inset: #f1f3f8;
-	--border: #e3e6ee;
-	--border-strong: #d3d8e4;
-	--text: #171a21;
-	--text-2: #565d6d;
-	--text-3: #8b92a3;
-	--accent: #5b5bd6;
-	--accent-strong: #4a4ac4;
-	--accent-weak: #ecebfb;
-	--accent-ring: rgba(91, 91, 214, 0.32);
-	--success: #1f9d63;
-	--success-weak: #e4f4ec;
-	--danger: #e0464b;
-	--danger-weak: #fce8e8;
-	--shadow-1: 0 1px 2px rgba(20, 24, 38, 0.06), 0 2px 6px rgba(20, 24, 38, 0.05);
-	--shadow-2: 0 12px 30px -12px rgba(23, 26, 52, 0.28), 0 4px 12px -6px rgba(23, 26, 52, 0.12);
-}
-
-.v-theme--dark {
-	--bg-grad-1: #0d1017;
-	--bg-grad-2: #0a0c11;
-	--surface: #14171f;
-	--surface-2: #191d27;
-	--surface-inset: #1d222d;
-	--border: #262b37;
-	--border-strong: #333a49;
-	--text: #eef1f7;
-	--text-2: #a3abbd;
-	--text-3: #6f7789;
-	--accent: #7d7cf0;
-	--accent-strong: #9291f4;
-	--accent-weak: #201f3a;
-	--accent-ring: rgba(125, 124, 240, 0.4);
-	--success: #34c07d;
-	--success-weak: #14271e;
-	--danger: #f16b6f;
-	--danger-weak: #2a1719;
-	--shadow-1: 0 1px 2px rgba(0, 0, 0, 0.4), 0 2px 6px rgba(0, 0, 0, 0.3);
-	--shadow-2: 0 18px 40px -14px rgba(0, 0, 0, 0.6), 0 6px 16px -8px rgba(0, 0, 0, 0.5);
-}
-
+/* =========================================================================
+   DESIGN TOKENS — Portfolio design language (simpleTodo_fastAPI/frontend)
+   Paleta monocromática (preto/branco/cinzas). A única cor vem das lâmpadas
+   de estado, tratadas como accent funcional — do mesmo modo que o portfólio
+   só colore ícones de marca. Tipografia fluida (clamp), escala base-8,
+   cards brancos com elevação suave, badges pill, animação de entrada.
+   ========================================================================= */
 :root {
-	--radius: 16px;
-	--radius-sm: 11px;
-	--ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
-	--ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+	/* Paleta base */
+	--color-black: #000000;
+	--color-ink: #1a1a1a;
+	--color-white: #ffffff;
+	--color-cloud: #e5e5e5;
+	--color-mist: #999999;
+
+	/* Aliases semânticos */
+	--bg-light: var(--color-cloud);
+	--bg-dark: var(--color-black);
+	--text-dark: var(--color-ink);
+	--text-light: var(--color-white);
+	--text-muted: var(--color-mist);
+	--text-muted-on-light: #5c5c5c;
+	--primary-accent: var(--color-ink);
+	--surface: var(--color-white);
+	--border-subtle: rgba(0, 0, 0, 0.07);
+	--border-strong: rgba(0, 0, 0, 0.14);
+	--border-subtle-dark: rgba(255, 255, 255, 0.12);
+
+	/* Elevação */
+	--shadow-sm: 0 2px 10px rgba(0, 0, 0, 0.06);
+	--shadow-md: 0 12px 30px rgba(0, 0, 0, 0.08);
+	--shadow-lg: 0 20px 45px rgba(0, 0, 0, 0.14);
+	--shadow-dark: 0 10px 30px rgba(0, 0, 0, 0.45);
+
+	/* Raio */
+	--radius-sm: 8px;
+	--radius-md: 16px;
+	--radius-lg: 24px;
+	--radius-pill: 999px;
+
+	/* Espaçamento base-8 */
+	--space-1: 4px;
+	--space-2: 8px;
+	--space-3: 16px;
+	--space-4: 24px;
+	--space-5: 32px;
+	--space-6: 48px;
+	--space-7: 64px;
+	--space-8: 96px;
+
+	/* Movimento */
+	--ease: cubic-bezier(0.4, 0, 0.2, 1);
+	--transition-fast: 0.2s var(--ease);
+	--transition: 0.35s var(--ease);
+
+	/* Layout */
+	--header-h: 68px;
+	--content-max: 1120px;
+
+	/* Tipografia fluida */
+	--fs-xs: clamp(0.72rem, 0.69rem + 0.15vw, 0.8rem);
+	--fs-sm: clamp(0.82rem, 0.79rem + 0.15vw, 0.9rem);
+	--fs-base: clamp(0.9rem, 0.87rem + 0.15vw, 0.95rem);
+	--fs-md: clamp(1rem, 0.95rem + 0.25vw, 1.1rem);
+	--fs-lg: clamp(1.2rem, 1.05rem + 0.75vw, 1.4rem);
+	--fs-xl: clamp(1.7rem, 1.35rem + 1.75vw, 2.2rem);
+	--fs-2xl: clamp(2.1rem, 1.5rem + 3vw, 3.2rem);
+
+	--font-head: 'Montserrat', system-ui, sans-serif;
+	--font-body: 'Raleway', system-ui, sans-serif;
+
+	/* Lâmpadas de estado (accent funcional) */
+	--lamp-draft: #7a8593;
+	--lamp-todo: #4a9fd4;
+	--lamp-doing: #f2a41c;
+	--lamp-done: #4bbd6b;
+	--lamp-trash: #df5140;
+
+	color-scheme: light;
+}
+
+html {
+	background-color: var(--bg-light);
+	scroll-behavior: smooth;
 }
 
 .v-application {
-	font-family: 'Manrope', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif !important;
+	background-color: var(--bg-light) !important;
+	color: var(--text-dark) !important;
+	font-family: var(--font-body) !important;
+	font-size: var(--fs-base);
+	font-feature-settings: 'tnum' 1;
+	line-height: 1.6;
 	-webkit-font-smoothing: antialiased;
 	text-rendering: optimizeLegibility;
-	font-feature-settings: 'ss01' 1, 'cv11' 1;
 }
 
 .v-application__wrap {
-	background:
-		radial-gradient(1200px 620px at 50% -10%, var(--bg-grad-1), var(--bg-grad-2));
+	background-color: var(--bg-light);
 	min-height: 100vh;
 }
 
-.num {
-	font-variant-numeric: tabular-nums;
-}
-
 ::selection {
-	background: var(--accent-ring);
-	color: var(--text);
+	background: rgba(0, 0, 0, 0.14);
+	color: var(--color-ink);
 }
 
 * {
 	scrollbar-width: thin;
-	scrollbar-color: var(--border-strong) transparent;
+	scrollbar-color: var(--color-mist) transparent;
 }
-*::-webkit-scrollbar {
-	width: 10px;
-	height: 10px;
+::-webkit-scrollbar {
+	width: 11px;
+	height: 11px;
 }
-*::-webkit-scrollbar-thumb {
-	background: var(--border-strong);
-	border-radius: 20px;
-	border: 2px solid transparent;
-	background-clip: content-box;
+::-webkit-scrollbar-track {
+	background: var(--bg-light);
 }
-*::-webkit-scrollbar-thumb:hover {
-	background: var(--text-3);
-	background-clip: content-box;
+::-webkit-scrollbar-thumb {
+	background: var(--color-mist);
+	border: 3px solid var(--bg-light);
+	border-radius: 8px;
+}
+::-webkit-scrollbar-thumb:hover {
+	background: var(--text-muted-on-light);
 }
 
-.focusable:focus-visible {
+:focus-visible {
+	outline: 2px solid var(--color-ink);
+	outline-offset: 2px;
+}
+
+input,
+textarea,
+select {
+	caret-color: var(--color-ink);
+}
+
+.num,
+.tnum {
+	font-variant-numeric: tabular-nums;
+}
+
+/* ---- Seções (portfolio) ---- */
+.section-title {
+	font-family: var(--font-head);
+	font-weight: 900;
+	text-transform: uppercase;
+	letter-spacing: 0.03em;
+	line-height: 1.1;
+	color: var(--text-dark);
+}
+.section-desc {
+	color: var(--text-muted-on-light);
+	font-size: var(--fs-sm);
+}
+/* Traço-acento curto sob os títulos */
+.divider {
+	display: block;
+	width: 44px;
+	height: 3px;
+	border-radius: var(--radius-pill);
+	background: var(--primary-accent);
+}
+
+/* ---- Rótulo pequeno em caixa alta ---- */
+.engraved,
+.eyebrow {
+	font-family: var(--font-head);
+	font-weight: 700;
+	letter-spacing: 0.14em;
+	text-transform: uppercase;
+}
+
+/* ---- Sistema de cards ---- */
+.card,
+.plate {
+	background: var(--surface);
+	border: 1px solid var(--border-subtle);
+	border-radius: var(--radius-md);
+	box-shadow: var(--shadow-sm);
+}
+/* Card interativo: eleva no hover como os cards de projeto do portfólio */
+.card-lift {
+	transition:
+		transform var(--transition),
+		box-shadow var(--transition),
+		border-color var(--transition);
+}
+.card-lift:hover {
+	transform: translateY(-6px);
+	box-shadow: var(--shadow-lg);
+	border-color: rgba(0, 0, 0, 0.12);
+}
+
+/* ---- Badge / pill ---- */
+.pill {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.4rem;
+	background: var(--bg-light);
+	border-radius: var(--radius-pill);
+	padding: 0.28rem 0.7rem;
+	font-family: var(--font-head);
+	font-weight: 700;
+	font-size: var(--fs-xs);
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+	color: var(--text-dark);
+	line-height: 1;
+}
+/* Ponto de estado (accent funcional) */
+.dot {
+	width: 9px;
+	height: 9px;
+	border-radius: var(--radius-pill);
+	flex: none;
+	background: var(--lamp, var(--color-mist));
+}
+
+/* ---- Botões ---- */
+.btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0.5rem;
+	font-family: var(--font-head);
+	font-weight: 700;
+	font-size: var(--fs-sm);
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+	border-radius: var(--radius-pill);
+	padding: 0.62rem 1.2rem;
+	border: 1px solid transparent;
+	cursor: pointer;
+	transition:
+		transform 0.12s var(--ease),
+		box-shadow 0.2s ease,
+		background-color 0.2s ease,
+		color 0.2s ease,
+		border-color 0.2s ease;
+}
+.btn:active {
+	transform: translateY(1px);
+}
+.btn:disabled {
+	opacity: 0.45;
+	cursor: not-allowed;
+}
+/* Primário — ink sólido (accent primário do portfólio) */
+.btn-primary {
+	color: var(--color-white);
+	background: var(--color-ink);
+	box-shadow: var(--shadow-sm);
+}
+.btn-primary:not(:disabled):hover {
+	background: var(--color-black);
+	box-shadow: var(--shadow-md);
+	transform: translateY(-2px);
+}
+/* Secundário — contorno sobre superfície clara */
+.btn-outline {
+	color: var(--color-ink);
+	background: var(--surface);
+	border: 1px solid var(--border-strong);
+}
+.btn-outline:not(:disabled):hover {
+	background: var(--bg-light);
+	transform: translateY(-2px);
+}
+
+/* ---- Campo de formulário ---- */
+.field {
+	width: 100%;
+	background: var(--surface);
+	border: 1px solid var(--border-strong);
+	border-radius: var(--radius-sm);
+	color: var(--color-ink);
+	padding: 0.68rem 0.85rem;
+	font-family: var(--font-body);
+	font-size: var(--fs-base);
+	transition:
+		border-color 0.15s ease,
+		box-shadow 0.15s ease;
+}
+.field::placeholder {
+	color: var(--text-muted-on-light);
+	opacity: 0.65;
+}
+.field:focus {
 	outline: none;
-	box-shadow: 0 0 0 3px var(--accent-ring);
-	border-color: var(--accent);
+	border-color: var(--color-ink);
+	box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.08);
+}
+
+/* ---- Animação de entrada (portfolio .reveal) ---- */
+.reveal {
+	opacity: 0;
+	transform: translateY(22px);
+	transition:
+		opacity var(--transition),
+		transform var(--transition);
+}
+.reveal.is-visible {
+	opacity: 1;
+	transform: none;
+}
+
+/* ---- Dropdown teleportado (StateSelect / CategorySelect) ---- */
+.scrim {
+	position: fixed;
+	inset: 0;
+	z-index: 60;
+}
+
+.panel {
+	position: fixed;
+	z-index: 61;
+	max-height: 320px;
+	overflow: auto;
+	padding: 6px;
+	border-radius: var(--radius-md) !important;
+	box-shadow: var(--shadow-lg);
+}
+
+.panel .grp {
+	margin-bottom: 4px;
+}
+
+.panel .grp-label {
+	padding: 6px 8px 2px;
+	font-size: 9px;
+	color: var(--color-mist);
+}
+
+.panel .opt {
+	display: flex;
+	width: 100%;
+	align-items: center;
+	gap: 10px;
+	border: 0;
+	background: transparent;
+	border-radius: 7px;
+	padding: 7px 8px;
+	text-align: left;
+	font-family: var(--font-body);
+	font-size: var(--fs-sm);
+	color: var(--color-ink);
+	cursor: pointer;
+	transition: background 0.14s var(--ease);
+}
+
+.panel .opt:hover {
+	background: var(--bg-light);
+}
+
+.panel .opt.active {
+	background: var(--color-ink);
+	color: var(--color-white);
+}
+
+.panel .none-dot {
+	width: 10px;
+	height: 10px;
+	border-radius: 999px;
+	border: 1px solid rgba(0, 0, 0, 0.2);
+	flex: none;
+}
+
+.menu-enter-active,
+.menu-leave-active {
+	transition: transform 0.14s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.14s ease;
+	transform-origin: top left;
+}
+.menu-enter-from,
+.menu-leave-to {
+	transform: scale(0.97) translateY(-4px);
+	opacity: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	html {
+		scroll-behavior: auto;
+	}
+	.reveal {
+		opacity: 1 !important;
+		transform: none !important;
+		transition: none !important;
+	}
+	*,
+	*::before,
+	*::after {
+		animation-duration: 0.001ms !important;
+		animation-iteration-count: 1 !important;
+		transition-duration: 0.001ms !important;
+	}
 }
