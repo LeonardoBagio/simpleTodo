@@ -14,6 +14,10 @@ async function makeStatus() {
 	return Status.create({ label: 'Em andamento', color: '#337ea9', group: 'em_andamento' });
 }
 
+async function makeDoneStatus() {
+	return Status.create({ label: 'Concluído', color: '#448361', group: 'concluidos' });
+}
+
 async function makeCategory() {
 	return Category.create({ label: 'feature', color: '#337ea9' });
 }
@@ -39,6 +43,61 @@ describe('GET /api/todos', () => {
 		expect(res.body[0].status.label).toBe('Em andamento');
 		expect(res.body[0].category.label).toBe('feature');
 	});
+
+	it('oculta tarefas concluídas por padrão', async () => {
+		const done = await makeDoneStatus();
+		await Todo.create({ title: 'Ativa' });
+		await Todo.create({ title: 'Finalizada', status: done._id });
+
+		const res = await request(app).get('/api/todos');
+		expect(res.status).toBe(200);
+		expect(res.body).toHaveLength(1);
+		expect(res.body[0].title).toBe('Ativa');
+	});
+
+	it('inclui as concluídas com includeDone=true', async () => {
+		const done = await makeDoneStatus();
+		await Todo.create({ title: 'Ativa' });
+		await Todo.create({ title: 'Finalizada', status: done._id });
+
+		const res = await request(app).get('/api/todos').query({ includeDone: 'true' });
+		expect(res.status).toBe(200);
+		expect(res.body).toHaveLength(2);
+	});
+
+	it('busca por título e traz concluídas mesmo sem includeDone', async () => {
+		const done = await makeDoneStatus();
+		await Todo.create({ title: 'Estudar Docker', status: done._id });
+		await Todo.create({ title: 'Outra coisa' });
+
+		const res = await request(app).get('/api/todos').query({ search: 'docker' });
+		expect(res.status).toBe(200);
+		expect(res.body).toHaveLength(1);
+		expect(res.body[0].title).toBe('Estudar Docker');
+	});
+
+	it('busca também pelo número da issue', async () => {
+		await Todo.create({ title: 'Sem match no título', issue: '207' });
+		await Todo.create({ title: 'Outra', issue: '999' });
+
+		const res = await request(app).get('/api/todos').query({ search: '207' });
+		expect(res.status).toBe(200);
+		expect(res.body).toHaveLength(1);
+		expect(res.body[0].issue).toBe('207');
+	});
+});
+
+describe('GET /api/todos/counts', () => {
+	it('retorna contagens de ativas, concluídas e total', async () => {
+		const done = await makeDoneStatus();
+		await Todo.create({ title: 'Ativa 1' });
+		await Todo.create({ title: 'Ativa 2' });
+		await Todo.create({ title: 'Finalizada', status: done._id });
+
+		const res = await request(app).get('/api/todos/counts');
+		expect(res.status).toBe(200);
+		expect(res.body).toEqual({ active: 2, done: 1, total: 3 });
+	});
 });
 
 describe('POST /api/todos', () => {
@@ -53,6 +112,20 @@ describe('POST /api/todos', () => {
 		const res = await request(app).post('/api/todos').send({ title: '  com espaços  ' });
 		expect(res.status).toBe(201);
 		expect(res.body.title).toBe('com espaços');
+	});
+
+	it('cria com o número da issue e faz trim', async () => {
+		const res = await request(app)
+			.post('/api/todos')
+			.send({ title: 'Com issue', issue: '  207  ' });
+		expect(res.status).toBe(201);
+		expect(res.body.issue).toBe('207');
+	});
+
+	it('usa issue vazia quando não informada', async () => {
+		const res = await request(app).post('/api/todos').send({ title: 'Sem issue' });
+		expect(res.status).toBe(201);
+		expect(res.body.issue).toBe('');
 	});
 
 	it('rejeita título ausente com 400', async () => {
@@ -75,6 +148,15 @@ describe('PATCH /api/todos/:id', () => {
 			.send({ title: 'Atualizado' });
 		expect(res.status).toBe(200);
 		expect(res.body.title).toBe('Atualizado');
+	});
+
+	it('atualiza o número da issue', async () => {
+		const todo = await Todo.create({ title: 'Original' });
+		const res = await request(app)
+			.patch(`/api/todos/${todo._id}`)
+			.send({ issue: '693' });
+		expect(res.status).toBe(200);
+		expect(res.body.issue).toBe('693');
 	});
 
 	it('permite limpar o status enviando null', async () => {

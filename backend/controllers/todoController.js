@@ -1,4 +1,5 @@
 const Todo = require('../models/TodoModel');
+const Status = require('../models/StatusModel');
 const { StatusCodes } = require('http-status-codes');
 
 const POPULATE = [
@@ -11,10 +12,41 @@ function readRef(value) {
 	return value;
 }
 
+function escapeRegExp(value) {
+	return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+async function doneStatusIds() {
+	const statuses = await Status.find({ group: 'concluidos' }).select('_id');
+	return statuses.map((s) => s._id);
+}
+
 exports.getAll = async (req, res, next) => {
 	try {
-		const all = await Todo.find().populate(POPULATE).sort({ createdAt: -1 });
+		const search = typeof req.query.search === 'string' ? req.query.search.trim() : '';
+		const filter = {};
+
+		if (search) {
+			const rx = new RegExp(escapeRegExp(search), 'i');
+			filter.$or = [{ title: rx }, { issue: rx }];
+		} else if (req.query.includeDone !== 'true') {
+			const ids = await doneStatusIds();
+			if (ids.length) filter.status = { $nin: ids };
+		}
+
+		const all = await Todo.find(filter).populate(POPULATE).sort({ createdAt: -1 });
 		res.status(StatusCodes.OK).json(all);
+	} catch (error) {
+		next(error);
+	}
+};
+
+exports.counts = async (req, res, next) => {
+	try {
+		const ids = await doneStatusIds();
+		const total = await Todo.countDocuments();
+		const done = ids.length ? await Todo.countDocuments({ status: { $in: ids } }) : 0;
+		res.status(StatusCodes.OK).json({ total, done, active: total - done });
 	} catch (error) {
 		next(error);
 	}
@@ -31,6 +63,7 @@ exports.create = async (req, res, next) => {
 
 		const created = await Todo.create({
 			title,
+			issue: typeof req.body.issue === 'string' ? req.body.issue.trim() : '',
 			status: readRef(req.body.status),
 			category: readRef(req.body.category),
 		});
@@ -54,6 +87,10 @@ exports.update = async (req, res, next) => {
 					.json({ message: 'O título não pode ser vazio' });
 			}
 			updates.title = title;
+		}
+
+		if (req.body.issue !== undefined) {
+			updates.issue = typeof req.body.issue === 'string' ? req.body.issue.trim() : '';
 		}
 
 		if (req.body.status !== undefined) {

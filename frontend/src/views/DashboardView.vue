@@ -13,6 +13,14 @@ const todos = ref([]);
 const loading = ref(true);
 const error = ref('');
 const categoryFilter = ref(null);
+const periodFilter = ref('all');
+
+const PERIODS = [
+	{ value: 'all', label: 'All' },
+	{ value: 30, label: '30D' },
+	{ value: 7, label: '7D' },
+	{ value: 1, label: '1D' },
+];
 
 const GROUP_COLOR = {
 	a_fazer: '#9b9a97',
@@ -22,11 +30,17 @@ const GROUP_COLOR = {
 const NONE_COLOR = '#7a8593';
 const FONT = "'Montserrat', system-ui, sans-serif";
 
-const scoped = computed(() =>
-	categoryFilter.value
-		? todos.value.filter((t) => t.category?._id === categoryFilter.value)
-		: todos.value,
-);
+const scoped = computed(() => {
+	let list = todos.value;
+	if (categoryFilter.value) {
+		list = list.filter((t) => t.category?._id === categoryFilter.value);
+	}
+	if (periodFilter.value !== 'all') {
+		const since = Date.now() - periodFilter.value * 24 * 60 * 60 * 1000;
+		list = list.filter((t) => new Date(t.updatedAt).getTime() >= since);
+	}
+	return list;
+});
 
 const total = computed(() => scoped.value.length);
 const entregues = computed(
@@ -145,7 +159,7 @@ async function load() {
 	error.value = '';
 	try {
 		await catalog.fetchAll();
-		todos.value = await api.todos.getAll();
+		todos.value = await api.todos.getAll({ includeDone: true });
 		await nextTick();
 		renderCharts();
 	} catch (e) {
@@ -155,7 +169,7 @@ async function load() {
 	}
 }
 
-watch([categoryFilter, () => catalog.state.statuses.length], () => {
+watch([categoryFilter, periodFilter, () => catalog.state.statuses.length], () => {
 	if (!loading.value) nextTick(renderCharts);
 });
 
@@ -170,9 +184,27 @@ onBeforeUnmount(destroyCharts);
 				<h1 class="section-title title">Dashboard</h1>
 				<span class="divider"></span>
 			</div>
-			<div class="filter">
-				<span class="eyebrow flabel">Filtrar por categoria</span>
-				<CategorySelect v-model="categoryFilter" all-label="Todas as categorias" />
+			<div class="filters">
+				<div class="filter">
+					<span class="eyebrow flabel">Período</span>
+					<div class="segment" role="group" aria-label="Filtrar por período">
+						<button
+							v-for="p in PERIODS"
+							:key="p.value"
+							type="button"
+							class="seg-btn"
+							:class="{ active: periodFilter === p.value }"
+							:aria-pressed="periodFilter === p.value"
+							@click="periodFilter = p.value"
+						>
+							{{ p.label }}
+						</button>
+					</div>
+				</div>
+				<div class="filter">
+					<span class="eyebrow flabel">Filtrar por categoria</span>
+					<CategorySelect v-model="categoryFilter" all-label="Todas as categorias" />
+				</div>
 			</div>
 		</header>
 
@@ -238,11 +270,51 @@ onBeforeUnmount(destroyCharts);
 	font-size: clamp(1.6rem, 1.2rem + 1.6vw, 2.2rem);
 }
 
+.filters {
+	display: flex;
+	align-items: flex-end;
+	gap: 16px;
+	flex-wrap: wrap;
+}
+
 .filter {
 	display: flex;
 	flex-direction: column;
 	gap: 6px;
 	align-items: flex-start;
+}
+
+.segment {
+	display: inline-flex;
+	background: var(--surface);
+	border: 1px solid var(--border-strong);
+	border-radius: var(--radius-pill);
+	padding: 2px;
+	gap: 2px;
+}
+
+.seg-btn {
+	border: none;
+	background: transparent;
+	border-radius: var(--radius-pill);
+	padding: 0.3rem 0.7rem;
+	font-family: var(--font-head);
+	font-weight: 700;
+	font-size: var(--fs-xs);
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+	color: var(--text-muted-on-light);
+	cursor: pointer;
+	transition: background 0.2s var(--ease), color 0.2s var(--ease);
+}
+
+.seg-btn:hover:not(.active) {
+	color: var(--color-ink);
+}
+
+.seg-btn.active {
+	background: var(--color-ink);
+	color: #fff;
 }
 
 .flabel {

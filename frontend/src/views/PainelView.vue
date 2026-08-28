@@ -1,5 +1,5 @@
 <script setup>
-import { ref, reactive, computed, onMounted, nextTick } from 'vue';
+import { ref, reactive, computed, watch, onMounted, nextTick } from 'vue';
 import api from '../services/api';
 import { useCatalog } from '../stores/catalog';
 import TaskComposer from '../components/TaskComposer.vue';
@@ -22,14 +22,17 @@ const composerEl = ref(null);
 
 const search = ref('');
 const categoryFilter = ref(null);
+const showDone = ref(false);
+const counts = reactive({ active: 0, done: 0, total: 0 });
 
 const NONE_KEY = 'none';
 
+const isSearching = computed(() => search.value.trim().length > 0);
+
 const filtered = computed(() =>
 	todos.value.filter((t) => {
-		if (search.value && !t.title.toLowerCase().includes(search.value.toLowerCase()))
-			return false;
 		if (categoryFilter.value && t.category?._id !== categoryFilter.value) return false;
+		if (!isSearching.value && !showDone.value && t.status?.group === 'concluidos') return false;
 		return true;
 	}),
 );
@@ -49,26 +52,47 @@ const groups = computed(() => {
 	return buckets;
 });
 
-const activeCount = computed(
-	() => todos.value.filter((t) => t.status?.group !== 'concluidos').length,
-);
-const doneCount = computed(
-	() => todos.value.filter((t) => t.status?.group === 'concluidos').length,
-);
+function buildParams() {
+	const q = search.value.trim();
+	if (q) return { search: q };
+	if (showDone.value) return { includeDone: true };
+	return {};
+}
+
+async function refreshCounts() {
+	try {
+		Object.assign(counts, await api.todos.counts());
+	} catch (e) {
+		return;
+	}
+}
+
+async function fetchTodos() {
+	error.value = '';
+	try {
+		todos.value = await api.todos.getAll(buildParams());
+	} catch (e) {
+		error.value = 'Não foi possível carregar as tarefas. Verifique se a API está no ar.';
+	}
+}
 
 async function load() {
 	loading.value = true;
-	error.value = '';
 	try {
 		await catalog.fetchAll();
-		todos.value = await api.todos.getAll();
+		await Promise.all([fetchTodos(), refreshCounts()]);
 		loaded.value = true;
-	} catch (e) {
-		error.value = 'Não foi possível carregar as tarefas. Verifique se a API está no ar.';
 	} finally {
 		loading.value = false;
 	}
 }
+
+let searchTimer;
+watch(search, () => {
+	clearTimeout(searchTimer);
+	searchTimer = setTimeout(fetchTodos, 300);
+});
+watch(showDone, fetchTodos);
 
 function toggleCollapse(key) {
 	if (collapsed.has(key)) collapsed.delete(key);
@@ -105,6 +129,7 @@ async function onCreate(payload) {
 		const created = await api.todos.create(payload);
 		todos.value.unshift(created);
 		showComposer.value = false;
+		refreshCounts();
 	} catch (e) {
 		error.value = 'Não foi possível adicionar a tarefa.';
 	} finally {
@@ -120,6 +145,7 @@ async function onUpdate(payload) {
 		const updated = await api.todos.update(id, patch);
 		upsert(updated);
 		closeComposer();
+		refreshCounts();
 	} catch (e) {
 		error.value = 'Não foi possível salvar a tarefa.';
 	} finally {
@@ -132,6 +158,7 @@ async function setField(id, patch) {
 	try {
 		const updated = await api.todos.update(id, patch);
 		upsert(updated);
+		refreshCounts();
 	} catch (e) {
 		error.value = 'Não foi possível atualizar a tarefa.';
 	} finally {
@@ -153,6 +180,7 @@ async function onRemove(todo) {
 	if (editing.value?._id === todo._id) closeComposer();
 	try {
 		await api.todos.remove(todo._id);
+		refreshCounts();
 	} catch (e) {
 		todos.value.splice(index, 0, removed);
 		error.value = 'Não foi possível excluir a tarefa.';
@@ -170,9 +198,9 @@ onMounted(load);
 				<span class="divider"></span>
 			</div>
 			<p class="section-desc counts">
-				<span class="num">{{ activeCount }}</span> ativa(s) ·
-				<span class="num">{{ doneCount }}</span> concluída(s) ·
-				<span class="num">{{ todos.length }}</span> no total
+				<span class="num">{{ counts.active }}</span> ativa(s) ·
+				<span class="num">{{ counts.done }}</span> concluída(s) ·
+				<span class="num">{{ counts.total }}</span> no total
 			</p>
 		</header>
 
@@ -193,9 +221,13 @@ onMounted(load);
 		<div class="controls">
 			<div class="search">
 				<v-icon icon="mdi-magnify" size="18" class="search-icon" />
-				<input v-model="search" class="field with-icon" type="search" placeholder="Localizar tarefa…" aria-label="Buscar" />
+				<input v-model="search" class="field with-icon" type="search" placeholder="Localizar por nome ou issue…" aria-label="Buscar" />
 			</div>
 			<CategorySelect v-model="categoryFilter" all-label="Todas as categorias" />
+			<label class="done-toggle" :class="{ off: isSearching }" :title="isSearching ? 'A busca já inclui os concluídos' : ''">
+				<input v-model="showDone" type="checkbox" :disabled="isSearching" />
+				<span>Ver concluídos</span>
+			</label>
 		</div>
 
 		<v-expand-transition>
@@ -295,6 +327,34 @@ onMounted(load);
 
 .field.with-icon {
 	padding-left: 38px;
+}
+
+.done-toggle {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	cursor: pointer;
+	user-select: none;
+	font-size: var(--fs-sm);
+	font-weight: 600;
+	color: var(--text-muted-on-light);
+	white-space: nowrap;
+}
+
+.done-toggle input {
+	width: 16px;
+	height: 16px;
+	accent-color: var(--color-ink);
+	cursor: pointer;
+}
+
+.done-toggle.off {
+	opacity: 0.5;
+	cursor: not-allowed;
+}
+
+.done-toggle.off input {
+	cursor: not-allowed;
 }
 
 .groups {

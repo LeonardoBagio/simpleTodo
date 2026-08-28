@@ -10,6 +10,7 @@ const props = defineProps({
 const emit = defineEmits(['create', 'update', 'cancel']);
 
 const title = ref('');
+const issue = ref('');
 const statusId = ref(null);
 const categoryId = ref(null);
 
@@ -20,6 +21,7 @@ watch(
 	() => props.editing,
 	(t) => {
 		title.value = t?.title ?? '';
+		issue.value = t?.issue ?? '';
 		statusId.value = t?.status?._id ?? null;
 		categoryId.value = t?.category?._id ?? null;
 	},
@@ -29,11 +31,17 @@ watch(
 function submit() {
 	const value = title.value.trim();
 	if (!value || props.busy) return;
-	const payload = { title: value, status: statusId.value, category: categoryId.value };
+	const payload = {
+		title: value,
+		issue: issue.value.trim(),
+		status: statusId.value,
+		category: categoryId.value,
+	};
 	if (isEdit.value) emit('update', { id: props.editing._id, ...payload });
 	else emit('create', payload);
 	if (!isEdit.value) {
 		title.value = '';
+		issue.value = '';
 		statusId.value = null;
 		categoryId.value = null;
 	}
@@ -52,6 +60,21 @@ function submit() {
 				type="text"
 				:placeholder="isEdit ? 'Editar título da tarefa…' : 'Descreva a nova tarefa…'"
 				aria-label="Título da tarefa"
+				:disabled="busy"
+				@keydown.enter.prevent="submit"
+			/>
+		</div>
+
+		<div class="row-issue">
+			<span class="lead-icon" aria-hidden="true">
+				<v-icon icon="mdi-github" size="18" />
+			</span>
+			<input
+				v-model="issue"
+				class="field with-icon"
+				type="text"
+				placeholder="Nº da issue no GitHub (ex.: 207)"
+				aria-label="Número da issue"
 				:disabled="busy"
 				@keydown.enter.prevent="submit"
 			/>
@@ -85,7 +108,8 @@ function submit() {
 	padding: 16px;
 }
 
-.row-top {
+.row-top,
+.row-issue {
 	position: relative;
 }
 

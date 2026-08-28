@@ -70,6 +70,11 @@ function onCategory(id) {
 
 		<h3 class="task-title" :class="{ done: isDone }">{{ todo.title }}</h3>
 
+		<span v-if="todo.issue" class="issue-tag num" title="Issue no GitHub">
+			<v-icon icon="mdi-github" size="14" />
+			#{{ todo.issue }}
+		</span>
+
 		<div class="task-foot">
 			<CategorySelect
 				:model-value="todo.category ? todo.category._id : null"
@@ -189,6 +194,21 @@ function onCategory(id) {
 	color: var(--text-muted-on-light);
 	text-decoration: line-through;
 	text-decoration-color: color-mix(in srgb, var(--lamp-done) 70%, transparent);
+}
+
+.issue-tag {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	align-self: flex-start;
+	padding: 3px 9px;
+	border-radius: var(--radius-sm);
+	border: 1px solid var(--border-subtle);
+	background: var(--bg-light);
+	color: var(--text-muted-on-light);
+	font-size: 11px;
+	font-weight: 700;
+	letter-spacing: 0.02em;
 }
 
 .task-foot {

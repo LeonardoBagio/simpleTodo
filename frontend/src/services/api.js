@@ -9,8 +9,11 @@ const http = axios.create({
 
 export default {
 	todos: {
-		getAll() {
-			return http.get('/todos').then((r) => r.data);
+		getAll(params = {}) {
+			return http.get('/todos', { params }).then((r) => r.data);
+		},
+		counts() {
+			return http.get('/todos/counts').then((r) => r.data);
 		},
 		create(payload) {
 			return http.post('/todos', payload).then((r) => r.data);

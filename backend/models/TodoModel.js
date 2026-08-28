@@ -8,6 +8,12 @@ const todoSchema = new mongoose.Schema(
 			trim: true,
 			example: 'Estudar Node.js',
 		},
+		issue: {
+			type: String,
+			trim: true,
+			default: '',
+			example: '207',
+		},
 		status: {
 			type: mongoose.Schema.Types.ObjectId,
 			ref: 'Status',
