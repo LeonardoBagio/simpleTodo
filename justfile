@@ -50,3 +50,8 @@ logs service='backend':
 # 📊  Mostra o status dos containers
 status:
     docker compose ps
+
+# 🧪  Roda os testes unitários do backend (MongoDB em memória, sem Docker)
+test:
+    @printf "{{ _blue }}🧪  Rodando os testes unitários do backend...{{ _reset }}\n"
+    cd backend && npm test

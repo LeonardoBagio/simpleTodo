@@ -5,7 +5,12 @@
   "scripts": {
     "swagger": "node swagger.js",
     "start": "node server.js",
-    "dev": "npm run swagger && nodemon -L server.js"
+    "dev": "npm run swagger && nodemon -L server.js",
+    "test": "jest --runInBand"
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "testTimeout": 30000
   },
   "dependencies": {
     "cors": "^2.8.5",
@@ -17,7 +22,10 @@
     "swagger-ui-express": "^5.0.1"
   },
   "devDependencies": {
+    "jest": "^29.7.0",
+    "mongodb-memory-server": "^9.5.0",
     "nodemon": "^3.0.1",
+    "supertest": "^6.3.4",
     "swagger-autogen": "^2.23.7"
   }
 }
