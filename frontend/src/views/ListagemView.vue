@@ -2,17 +2,17 @@
 import { ref, computed, onMounted } from 'vue';
 import api from '../services/api';
 import { useCatalog } from '../stores/catalog';
+import { useFilters } from '../stores/filters';
 import { fmtDate } from '../utils/states';
 import CategorySelect from '../components/CategorySelect.vue';
 import StatusBadge from '../components/StatusBadge.vue';
 
 const catalog = useCatalog();
+const { state: filters } = useFilters();
 const todos = ref([]);
 const loading = ref(true);
 const loaded = ref(false);
 const error = ref('');
-const categoryFilter = ref(null);
-const periodFilter = ref('all');
 
 const PERIODS = [
 	{ value: 'all', label: 'All' },
@@ -31,11 +31,11 @@ function startOfToday() {
 
 const scoped = computed(() => {
 	let list = todos.value;
-	if (categoryFilter.value) {
-		list = list.filter((t) => t.category?._id === categoryFilter.value);
+	if (filters.category) {
+		list = list.filter((t) => t.category?._id === filters.category);
 	}
-	if (periodFilter.value !== 'all') {
-		const since = Date.now() - periodFilter.value * DAY;
+	if (filters.period !== 'all') {
+		const since = Date.now() - filters.period * DAY;
 		list = list.filter((t) => new Date(t.updatedAt).getTime() >= since);
 	}
 	return [...list].sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
@@ -94,9 +94,9 @@ onMounted(load);
 							:key="p.value"
 							type="button"
 							class="seg-btn"
-							:class="{ active: periodFilter === p.value }"
-							:aria-pressed="periodFilter === p.value"
-							@click="periodFilter = p.value"
+							:class="{ active: filters.period === p.value }"
+							:aria-pressed="filters.period === p.value"
+							@click="filters.period = p.value"
 						>
 							{{ p.label }}
 						</button>
@@ -104,7 +104,7 @@ onMounted(load);
 				</div>
 				<div class="filter">
 					<span class="eyebrow flabel">Filtrar por categoria</span>
-					<CategorySelect v-model="categoryFilter" all-label="Todas as categorias" />
+					<CategorySelect v-model="filters.category" all-label="Todas as categorias" />
 				</div>
 			</div>
 		</header>
