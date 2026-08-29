@@ -1,6 +1,15 @@
 import axios from 'axios';
 
-const base = (import.meta.env.VITE_API_URL || 'http://localhost:3000').replace(/\/$/, '');
+function resolveBase() {
+	const explicit = import.meta.env.VITE_API_URL;
+	if (explicit) return explicit;
+
+	const port = import.meta.env.VITE_API_PORT || '3000';
+	const { protocol, hostname } = window.location;
+	return `${protocol}//${hostname}:${port}`;
+}
+
+const base = resolveBase().replace(/\/$/, '');
 
 const http = axios.create({
 	baseURL: `${base}/api`,

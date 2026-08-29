@@ -101,13 +101,14 @@ onMounted(() => catalog.fetchAll());
 
 			<div class="field-group">
 				<span class="flabel eyebrow">Grupo</span>
-				<div class="segmented">
+				<div class="segment" role="group" aria-label="Grupo do status">
 					<button
 						v-for="opt in GROUP_OPTIONS"
 						:key="opt.value"
 						type="button"
-						class="seg"
+						class="seg-btn"
 						:class="{ active: group === opt.value }"
+						:aria-pressed="group === opt.value"
 						@click="group = opt.value"
 					>
 						{{ opt.label }}
@@ -129,7 +130,15 @@ onMounted(() => catalog.fetchAll());
 			</div>
 		</form>
 
-		<div v-if="error" class="banner">{{ error }}</div>
+		<v-expand-transition>
+			<div v-if="error" class="banner" role="alert">
+				<v-icon icon="mdi-alert-circle-outline" size="18" />
+				<span>{{ error }}</span>
+				<button class="banner-close" type="button" aria-label="Dispensar" @click="error = ''">
+					<v-icon icon="mdi-close" size="16" />
+				</button>
+			</div>
+		</v-expand-transition>
 
 		<div class="groups">
 			<section v-for="g in grouped" :key="g.group" class="grp">
@@ -222,35 +231,6 @@ onMounted(() => catalog.fetchAll());
 	font-family: var(--font-head);
 }
 
-.segmented {
-	display: inline-flex;
-	gap: 4px;
-	background: var(--bg-light);
-	border-radius: var(--radius-pill);
-	padding: 4px;
-	width: fit-content;
-}
-
-.seg {
-	border: 0;
-	background: transparent;
-	border-radius: var(--radius-pill);
-	padding: 0.5rem 1rem;
-	font-family: var(--font-head);
-	font-weight: 700;
-	font-size: var(--fs-xs);
-	letter-spacing: 0.06em;
-	text-transform: uppercase;
-	color: var(--text-muted-on-light);
-	cursor: pointer;
-	transition: background 0.18s, color 0.18s;
-}
-
-.seg.active {
-	background: var(--color-ink);
-	color: var(--color-white);
-}
-
 .preview {
 	display: flex;
 	align-items: center;
@@ -332,12 +312,32 @@ onMounted(() => catalog.fetchAll());
 }
 
 .banner {
+	display: flex;
+	align-items: center;
+	gap: 10px;
 	background: color-mix(in srgb, var(--lamp-trash) 10%, var(--surface));
 	color: var(--lamp-trash);
 	border: 1px solid color-mix(in srgb, var(--lamp-trash) 30%, transparent);
 	border-radius: var(--radius-sm);
-	padding: 12px 14px;
+	padding: 11px 12px 11px 14px;
 	font-size: var(--fs-sm);
 	font-weight: 600;
+}
+
+.banner span {
+	flex: 1;
+}
+
+.banner-close {
+	flex: none;
+	border: 0;
+	background: transparent;
+	color: inherit;
+	cursor: pointer;
+	display: grid;
+	place-items: center;
+	border-radius: 7px;
+	width: 26px;
+	height: 26px;
 }
 </style>

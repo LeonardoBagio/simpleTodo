@@ -293,6 +293,86 @@ select {
 	box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.08);
 }
 
+/* ---- Controle segmentado (filtro de período, seletor de grupo) ---- */
+.segment {
+	display: inline-flex;
+	background: var(--surface);
+	border: 1px solid var(--border-strong);
+	border-radius: var(--radius-pill);
+	padding: 2px;
+	gap: 2px;
+}
+.seg-btn {
+	border: none;
+	background: transparent;
+	border-radius: var(--radius-pill);
+	padding: 0.3rem 0.7rem;
+	font-family: var(--font-head);
+	font-weight: 700;
+	font-size: var(--fs-xs);
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+	color: var(--text-muted-on-light);
+	cursor: pointer;
+	transition:
+		background 0.2s var(--ease),
+		color 0.2s var(--ease);
+}
+.seg-btn:hover:not(.active) {
+	color: var(--color-ink);
+}
+.seg-btn.active {
+	background: var(--color-ink);
+	color: var(--color-white);
+}
+
+/* ---- Banner de alerta/erro ---- */
+.banner {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	background: color-mix(in srgb, var(--lamp-trash) 10%, var(--surface));
+	color: var(--lamp-trash);
+	border: 1px solid color-mix(in srgb, var(--lamp-trash) 30%, transparent);
+	border-radius: var(--radius-sm);
+	padding: 11px 12px 11px 14px;
+	font-size: var(--fs-sm);
+	font-weight: 600;
+}
+.banner > span {
+	flex: 1;
+}
+.banner-close {
+	flex: none;
+	border: 0;
+	background: transparent;
+	color: inherit;
+	cursor: pointer;
+	display: grid;
+	place-items: center;
+	border-radius: 7px;
+	width: 26px;
+	height: 26px;
+}
+.banner-retry {
+	flex: none;
+	border: 1px solid color-mix(in srgb, var(--lamp-trash) 40%, transparent);
+	background: transparent;
+	color: inherit;
+	cursor: pointer;
+	border-radius: var(--radius-pill);
+	padding: 0.3rem 0.8rem;
+	font-family: var(--font-head);
+	font-weight: 700;
+	font-size: var(--fs-xs);
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
+	transition: background 0.2s var(--ease);
+}
+.banner-retry:hover {
+	background: color-mix(in srgb, var(--lamp-trash) 12%, transparent);
+}
+
 /* ---- Animação de entrada (portfolio .reveal) ---- */
 .reveal {
 	opacity: 0;

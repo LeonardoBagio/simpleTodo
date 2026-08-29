@@ -95,4 +95,10 @@ defineProps({
 .wordmark.light .sub {
 	color: var(--text-muted-on-light);
 }
+
+@media (max-width: 860px) {
+	.sub {
+		display: none;
+	}
+}
 </style>

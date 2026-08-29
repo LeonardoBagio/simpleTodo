@@ -94,7 +94,15 @@ onMounted(() => catalog.fetchAll());
 			</div>
 		</form>
 
-		<div v-if="error" class="banner">{{ error }}</div>
+		<v-expand-transition>
+			<div v-if="error" class="banner" role="alert">
+				<v-icon icon="mdi-alert-circle-outline" size="18" />
+				<span>{{ error }}</span>
+				<button class="banner-close" type="button" aria-label="Dispensar" @click="error = ''">
+					<v-icon icon="mdi-close" size="16" />
+				</button>
+			</div>
+		</v-expand-transition>
 
 		<ul class="list">
 			<li v-for="c in categories" :key="c._id" class="row card">
@@ -261,13 +269,4 @@ onMounted(() => catalog.fetchAll());
 	text-align: center;
 }
 
-.banner {
-	background: color-mix(in srgb, var(--lamp-trash) 10%, var(--surface));
-	color: var(--lamp-trash);
-	border: 1px solid color-mix(in srgb, var(--lamp-trash) 30%, transparent);
-	border-radius: var(--radius-sm);
-	padding: 12px 14px;
-	font-size: var(--fs-sm);
-	font-weight: 600;
-}
 </style>

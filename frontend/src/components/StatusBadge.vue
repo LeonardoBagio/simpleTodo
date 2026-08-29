@@ -15,16 +15,19 @@ defineProps({
 	display: inline-flex;
 	align-items: center;
 	max-width: 100%;
+	justify-content: center;
+	text-align: center;
 	border-radius: var(--radius-pill);
 	padding: 0.28rem 0.7rem;
 	font-family: var(--font-head);
 	font-weight: 700;
 	font-size: var(--fs-xs);
-	line-height: 1.25;
+	line-height: 1.15;
 	letter-spacing: 0.06em;
 	text-transform: uppercase;
 	color: #fff;
 	overflow-wrap: anywhere;
+	text-wrap: balance;
 }
 
 .status-badge.is-empty {

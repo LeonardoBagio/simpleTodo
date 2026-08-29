@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, reactive, computed, onMounted } from 'vue';
 import api from '../services/api';
 import { useCatalog } from '../stores/catalog';
 import { useFilters } from '../stores/filters';
@@ -15,13 +15,17 @@ const loaded = ref(false);
 const error = ref('');
 
 const PERIODS = [
-	{ value: 'all', label: 'All' },
+	{ value: 'all', label: 'Tudo' },
 	{ value: 30, label: '30D' },
 	{ value: 7, label: '7D' },
 	{ value: 1, label: '1D' },
 ];
 
 const DAY = 24 * 60 * 60 * 1000;
+const PAGE = 50;
+
+const collapsed = reactive(new Set(['older']));
+const expanded = reactive(new Set());
 
 function startOfToday() {
 	const d = new Date();
@@ -43,6 +47,8 @@ const scoped = computed(() => {
 
 const total = computed(() => scoped.value.length);
 
+const hasFilter = computed(() => filters.period !== 'all' || !!filters.category);
+
 const groups = computed(() => {
 	const today = startOfToday();
 	const defs = [
@@ -60,6 +66,15 @@ const groups = computed(() => {
 	}
 	return buckets.filter((b) => b.items.length);
 });
+
+function toggleCollapse(key) {
+	if (collapsed.has(key)) collapsed.delete(key);
+	else collapsed.add(key);
+}
+
+function visibleItems(g) {
+	return expanded.has(g.key) ? g.items : g.items.slice(0, PAGE);
+}
 
 async function load() {
 	loading.value = true;
@@ -84,6 +99,9 @@ onMounted(load);
 			<div>
 				<h1 class="section-title title">Listagem</h1>
 				<span class="divider"></span>
+				<p v-if="loaded" class="count-line">
+					<span class="num">{{ total }}</span> tarefa(s){{ hasFilter ? ' no filtro' : '' }}
+				</p>
 			</div>
 			<div class="filters">
 				<div class="filter">
@@ -109,7 +127,13 @@ onMounted(load);
 			</div>
 		</header>
 
-		<div v-if="error" class="banner" role="alert">{{ error }}</div>
+		<v-expand-transition>
+			<div v-if="error" class="banner" role="alert">
+				<v-icon icon="mdi-alert-circle-outline" size="18" />
+				<span>{{ error }}</span>
+				<button class="banner-retry" type="button" @click="load">Tentar novamente</button>
+			</div>
+		</v-expand-transition>
 
 		<div v-if="loading && !loaded" class="skeleton-wrap card">
 			<div v-for="n in 6" :key="n" class="skeleton-row" />
@@ -125,63 +149,74 @@ onMounted(load);
 
 		<section v-else class="groups">
 			<div v-for="g in groups" :key="g.key" class="group">
-				<div class="group-head">
+				<button
+					class="group-head"
+					type="button"
+					:aria-expanded="!collapsed.has(g.key)"
+					@click="toggleCollapse(g.key)"
+				>
+					<v-icon :icon="collapsed.has(g.key) ? 'mdi-chevron-right' : 'mdi-chevron-down'" size="18" class="caret" />
 					<span class="group-label">{{ g.label }}</span>
 					<span class="group-count num">{{ g.items.length }}</span>
-				</div>
+				</button>
 
-				<div class="table-scroll card">
-					<table class="rows">
-						<thead>
-							<tr>
-								<th class="col-when">
-									<v-icon icon="mdi-clock-outline" size="14" /> Última edição
-								</th>
-								<th class="col-issue">
-									<v-icon icon="mdi-github" size="14" /> Issue
-								</th>
-								<th class="col-task">
-									<v-icon icon="mdi-format-list-checks" size="14" /> Tarefa
-								</th>
-								<th class="col-cat">
-									<v-icon icon="mdi-tag-outline" size="14" /> Categoria
-								</th>
-								<th class="col-state">
-									<v-icon icon="mdi-progress-check" size="14" /> Andamento
-								</th>
-							</tr>
-						</thead>
-						<tbody>
-							<tr v-for="t in g.items" :key="t._id" class="row">
-								<td class="col-when">
-									<span class="when num">{{ fmtDate(t.updatedAt) }}</span>
-								</td>
-								<td class="col-issue">
-									<span v-if="t.issue" class="issue num">#{{ t.issue }}</span>
-									<span v-else class="dash">—</span>
-								</td>
-								<td class="col-task">
-									<span class="task-title" :class="{ done: t.status?.group === 'concluidos' }" :title="t.title">
-										{{ t.title }}
-									</span>
-								</td>
-								<td class="col-cat">
-									<span
-										v-if="t.category"
-										class="cat-badge"
-										:style="{ background: t.category.color }"
-									>
-										{{ t.category.label }}
-									</span>
-									<span v-else class="muted-badge">Sem categoria</span>
-								</td>
-								<td class="col-state">
-									<StatusBadge :status="t.status" />
-								</td>
-							</tr>
-						</tbody>
-					</table>
-				</div>
+				<v-expand-transition>
+					<div v-show="!collapsed.has(g.key)">
+						<div class="table-scroll card">
+							<table class="rows">
+								<caption class="sr-only">{{ g.label }}</caption>
+								<thead>
+									<tr>
+										<th class="col-when">
+											<v-icon icon="mdi-clock-outline" size="14" /> Última edição
+										</th>
+										<th class="col-issue">
+											<v-icon icon="mdi-github" size="14" /> Issue
+										</th>
+										<th class="col-task">
+											<v-icon icon="mdi-format-list-checks" size="14" /> Tarefa
+										</th>
+										<th class="col-cat">
+											<v-icon icon="mdi-tag-outline" size="14" /> Categoria
+										</th>
+										<th class="col-state">
+											<v-icon icon="mdi-progress-check" size="14" /> Andamento
+										</th>
+									</tr>
+								</thead>
+								<tbody>
+									<tr v-for="t in visibleItems(g)" :key="t._id" class="row">
+										<td class="col-when">
+											<span class="when num">{{ fmtDate(t.updatedAt) }}</span>
+										</td>
+										<td class="col-issue">
+											<span v-if="t.issue" class="issue num">#{{ t.issue }}</span>
+											<span v-else class="dash">—</span>
+										</td>
+										<td class="col-task">
+											<span class="task-title" :class="{ done: t.status?.group === 'concluidos' }" :title="t.title">
+												{{ t.title }}
+											</span>
+										</td>
+										<td class="col-cat">
+											<span v-if="t.category" class="cat-chip" :style="{ background: t.category.color }">{{ t.category.label }}</span>
+											<span v-else class="cat-chip is-empty">Sem categoria</span>
+										</td>
+										<td class="col-state">
+											<StatusBadge :status="t.status" />
+										</td>
+									</tr>
+								</tbody>
+							</table>
+						</div>
+
+						<div v-if="g.items.length > PAGE && !expanded.has(g.key)" class="load-more-wrap">
+							<button class="load-more" type="button" @click="expanded.add(g.key)">
+								Mostrar mais <span class="num">{{ g.items.length - PAGE }}</span> restantes
+							</button>
+						</div>
+					</div>
+				</v-expand-transition>
 			</div>
 		</section>
 	</div>
@@ -206,6 +241,12 @@ onMounted(load);
 	font-size: clamp(1.6rem, 1.2rem + 1.6vw, 2.2rem);
 }
 
+.count-line {
+	margin: 10px 0 0;
+	font-size: var(--fs-sm);
+	color: var(--text-muted-on-light);
+}
+
 .filters {
 	display: flex;
 	align-items: flex-end;
@@ -218,39 +259,6 @@ onMounted(load);
 	flex-direction: column;
 	gap: 6px;
 	align-items: flex-start;
-}
-
-.segment {
-	display: inline-flex;
-	background: var(--surface);
-	border: 1px solid var(--border-strong);
-	border-radius: var(--radius-pill);
-	padding: 2px;
-	gap: 2px;
-}
-
-.seg-btn {
-	border: none;
-	background: transparent;
-	border-radius: var(--radius-pill);
-	padding: 0.3rem 0.7rem;
-	font-family: var(--font-head);
-	font-weight: 700;
-	font-size: var(--fs-xs);
-	letter-spacing: 0.08em;
-	text-transform: uppercase;
-	color: var(--text-muted-on-light);
-	cursor: pointer;
-	transition: background 0.2s var(--ease), color 0.2s var(--ease);
-}
-
-.seg-btn:hover:not(.active) {
-	color: var(--color-ink);
-}
-
-.seg-btn.active {
-	background: var(--color-ink);
-	color: #fff;
 }
 
 .flabel {
@@ -268,8 +276,16 @@ onMounted(load);
 	display: flex;
 	align-items: center;
 	gap: 10px;
+	background: transparent;
+	border: 0;
+	cursor: pointer;
 	padding: 4px 2px;
 	margin-bottom: 12px;
+	width: 100%;
+}
+
+.caret {
+	color: var(--text-muted-on-light);
 }
 
 .group-label {
@@ -289,8 +305,9 @@ onMounted(load);
 }
 
 .table-scroll {
-	overflow-x: auto;
-	padding: 4px;
+	overflow: auto;
+	max-height: 70vh;
+	overscroll-behavior: contain;
 }
 
 .rows {
@@ -302,6 +319,10 @@ onMounted(load);
 }
 
 .rows thead th {
+	position: sticky;
+	top: 0;
+	z-index: 1;
+	background: var(--surface);
 	text-align: left;
 	white-space: nowrap;
 	padding: 12px 14px;
@@ -311,7 +332,7 @@ onMounted(load);
 	letter-spacing: 0.14em;
 	text-transform: uppercase;
 	color: var(--text-muted-on-light);
-	border-bottom: 1px solid var(--border-subtle);
+	box-shadow: inset 0 -1px 0 var(--border-subtle);
 }
 
 .rows thead th .v-icon {
@@ -398,7 +419,7 @@ onMounted(load);
 	text-decoration-color: color-mix(in srgb, var(--lamp-done) 70%, transparent);
 }
 
-.cat-badge {
+.cat-chip {
 	display: inline-flex;
 	align-items: center;
 	max-width: 100%;
@@ -414,13 +435,47 @@ onMounted(load);
 	overflow-wrap: anywhere;
 }
 
-.muted-badge {
+.cat-chip.is-empty {
+	background: var(--bg-light);
+	color: var(--text-muted-on-light);
+}
+
+.load-more-wrap {
+	display: flex;
+	justify-content: center;
+	margin-top: 12px;
+}
+
+.load-more {
+	border: 1px solid var(--border-strong);
+	background: var(--surface);
+	border-radius: var(--radius-pill);
+	padding: 0.45rem 1.1rem;
 	font-family: var(--font-head);
 	font-weight: 700;
 	font-size: var(--fs-xs);
 	letter-spacing: 0.06em;
 	text-transform: uppercase;
-	color: var(--text-muted-on-light);
+	color: var(--color-ink);
+	cursor: pointer;
+	transition: background 0.2s var(--ease), color 0.2s var(--ease);
+}
+
+.load-more:hover {
+	background: var(--color-ink);
+	color: #fff;
+}
+
+.sr-only {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	padding: 0;
+	margin: -1px;
+	overflow: hidden;
+	clip: rect(0, 0, 0, 0);
+	white-space: nowrap;
+	border: 0;
 }
 
 .skeleton-wrap {
@@ -465,16 +520,6 @@ onMounted(load);
 	color: var(--text-muted-on-light);
 	font-size: var(--fs-sm);
 	margin: 0;
-}
-
-.banner {
-	background: color-mix(in srgb, var(--lamp-trash) 10%, var(--surface));
-	color: var(--lamp-trash);
-	border: 1px solid color-mix(in srgb, var(--lamp-trash) 30%, transparent);
-	border-radius: var(--radius-sm);
-	padding: 12px 14px;
-	font-size: var(--fs-sm);
-	font-weight: 600;
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -443,36 +443,6 @@ onMounted(load);
 	margin: 0;
 }
 
-.banner {
-	display: flex;
-	align-items: center;
-	gap: 10px;
-	background: color-mix(in srgb, var(--lamp-trash) 10%, var(--surface));
-	color: var(--lamp-trash);
-	border: 1px solid color-mix(in srgb, var(--lamp-trash) 30%, transparent);
-	border-radius: var(--radius-sm);
-	padding: 11px 12px 11px 14px;
-	font-size: var(--fs-sm);
-	font-weight: 600;
-}
-
-.banner span {
-	flex: 1;
-}
-
-.banner-close {
-	flex: none;
-	border: 0;
-	background: transparent;
-	color: inherit;
-	cursor: pointer;
-	display: grid;
-	place-items: center;
-	border-radius: 7px;
-	width: 26px;
-	height: 26px;
-}
-
 @media (prefers-reduced-motion: reduce) {
 	.skeleton {
 		animation: none;

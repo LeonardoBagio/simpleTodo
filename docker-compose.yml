@@ -38,8 +38,8 @@ services:
       - NODE_ENV=${NODE_ENV:-development}
       - VITE_PORT=${FRONTEND_PORT:-5173}
       - TZ=${TZ:-America/Sao_Paulo}
-      # Passa a URL do backend para o Vue conseguir fazer as requisições
-      - VITE_API_URL=http://localhost:${NODE_PORT:-3000}
+      # Porta do backend; o frontend monta a URL a partir do hostname acessado
+      - VITE_API_PORT=${NODE_PORT:-3000}
     command: npm run dev
     depends_on:
       - backend

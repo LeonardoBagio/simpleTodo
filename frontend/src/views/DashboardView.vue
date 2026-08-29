@@ -16,7 +16,7 @@ const loading = ref(true);
 const error = ref('');
 
 const PERIODS = [
-	{ value: 'all', label: 'All' },
+	{ value: 'all', label: 'Tudo' },
 	{ value: 30, label: '30D' },
 	{ value: 7, label: '7D' },
 	{ value: 1, label: '1D' },
@@ -208,7 +208,13 @@ onBeforeUnmount(destroyCharts);
 			</div>
 		</header>
 
-		<div v-if="error" class="banner" role="alert">{{ error }}</div>
+		<v-expand-transition>
+			<div v-if="error" class="banner" role="alert">
+				<v-icon icon="mdi-alert-circle-outline" size="18" />
+				<span>{{ error }}</span>
+				<button class="banner-retry" type="button" @click="load">Tentar novamente</button>
+			</div>
+		</v-expand-transition>
 
 		<div class="stats">
 			<div class="stat card">
@@ -284,39 +290,6 @@ onBeforeUnmount(destroyCharts);
 	align-items: flex-start;
 }
 
-.segment {
-	display: inline-flex;
-	background: var(--surface);
-	border: 1px solid var(--border-strong);
-	border-radius: var(--radius-pill);
-	padding: 2px;
-	gap: 2px;
-}
-
-.seg-btn {
-	border: none;
-	background: transparent;
-	border-radius: var(--radius-pill);
-	padding: 0.3rem 0.7rem;
-	font-family: var(--font-head);
-	font-weight: 700;
-	font-size: var(--fs-xs);
-	letter-spacing: 0.08em;
-	text-transform: uppercase;
-	color: var(--text-muted-on-light);
-	cursor: pointer;
-	transition: background 0.2s var(--ease), color 0.2s var(--ease);
-}
-
-.seg-btn:hover:not(.active) {
-	color: var(--color-ink);
-}
-
-.seg-btn.active {
-	background: var(--color-ink);
-	color: #fff;
-}
-
 .flabel {
 	font-size: 9px;
 	color: var(--text-muted-on-light);
@@ -380,16 +353,6 @@ onBeforeUnmount(destroyCharts);
 
 .canvas-wrap.tall {
 	height: 320px;
-}
-
-.banner {
-	background: color-mix(in srgb, var(--lamp-trash) 10%, var(--surface));
-	color: var(--lamp-trash);
-	border: 1px solid color-mix(in srgb, var(--lamp-trash) 30%, transparent);
-	border-radius: var(--radius-sm);
-	padding: 12px 14px;
-	font-size: var(--fs-sm);
-	font-weight: 600;
 }
 
 @media (max-width: 720px) {
