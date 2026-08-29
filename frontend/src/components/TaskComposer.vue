@@ -87,7 +87,7 @@ function submit() {
 			</div>
 
 			<div class="buttons">
-				<button v-if="isEdit" class="btn btn-outline" type="button" @click="emit('cancel')">
+				<button class="btn btn-outline" type="button" @click="emit('cancel')">
 					Cancelar
 				</button>
 				<button class="btn btn-primary" type="submit" :disabled="!canSave">
