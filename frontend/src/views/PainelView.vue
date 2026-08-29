@@ -256,8 +256,7 @@ onMounted(load);
 			<div v-for="g in groups" :key="g.key" class="group">
 				<button class="group-head" type="button" @click="toggleCollapse(g.key)">
 					<v-icon :icon="collapsed.has(g.key) ? 'mdi-chevron-right' : 'mdi-chevron-down'" size="18" class="caret" />
-					<span class="dot" :style="{ '--lamp': g.color }"></span>
-					<span class="group-label">{{ g.label }}</span>
+					<span class="group-badge" :style="{ background: g.color }">{{ g.label }}</span>
 					<span class="group-count num">{{ g.items.length }}</span>
 				</button>
 
@@ -379,18 +378,17 @@ onMounted(load);
 	color: var(--text-muted-on-light);
 }
 
-.group-head .dot {
-	width: 10px;
-	height: 10px;
-}
-
-.group-label {
+.group-badge {
+	display: inline-flex;
+	align-items: center;
+	border-radius: var(--radius-pill);
+	padding: 0.3rem 0.8rem;
 	font-family: var(--font-head);
-	font-weight: 900;
-	text-transform: uppercase;
+	font-weight: 700;
+	font-size: var(--fs-xs);
 	letter-spacing: 0.06em;
-	font-size: var(--fs-sm);
-	color: var(--color-ink);
+	text-transform: uppercase;
+	color: #fff;
 }
 
 .group-count {

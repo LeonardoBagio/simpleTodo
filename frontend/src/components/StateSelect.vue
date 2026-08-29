@@ -1,6 +1,5 @@
 <script setup>
 import { ref, computed, nextTick, onMounted, onBeforeUnmount } from 'vue';
-import StateLamp from './StateLamp.vue';
 import { useCatalog } from '../stores/catalog';
 
 const props = defineProps({
@@ -64,18 +63,14 @@ onBeforeUnmount(() => {
 			ref="triggerEl"
 			type="button"
 			class="trigger"
+			:class="{ colored: current }"
+			:style="current ? { background: current.color, borderColor: 'transparent', color: '#fff' } : {}"
 			:aria-expanded="open"
 			aria-haspopup="listbox"
 			@click="toggle"
 		>
-			<StateLamp
-				v-if="current"
-				:color="current.color"
-				:size="9"
-				:pulse="current.group === 'em_andamento'"
-			/>
 			<span :class="{ muted: !current }">{{ current ? current.label : (allLabel || placeholder) }}</span>
-			<v-icon icon="mdi-chevron-down" size="14" class="chev" />
+			<v-icon icon="mdi-chevron-down" size="14" class="chev" :style="current ? { color: 'rgba(255,255,255,0.75)' } : {}" />
 		</button>
 
 		<Teleport to="body">
@@ -102,7 +97,7 @@ onBeforeUnmount(() => {
 							:class="{ active: modelValue === s._id }"
 							@click="pick(s._id)"
 						>
-							<StateLamp :color="s.color" :size="10" :pulse="s.group === 'em_andamento'" />
+							<span class="state-dot" :style="{ background: s.color }" />
 							{{ s.label }}
 						</button>
 					</div>
@@ -136,12 +131,19 @@ onBeforeUnmount(() => {
 	transition: border-color 0.2s var(--ease);
 }
 
-.trigger:hover {
+.trigger:not(.colored):hover {
 	border-color: rgba(0, 0, 0, 0.28);
 }
 
 .trigger .muted {
 	color: var(--text-muted-on-light);
+}
+
+.state-dot {
+	width: 10px;
+	height: 10px;
+	border-radius: 999px;
+	flex: none;
 }
 
 .chev {

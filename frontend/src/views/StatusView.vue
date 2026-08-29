@@ -2,7 +2,7 @@
 import { ref, computed, onMounted } from 'vue';
 import { useCatalog } from '../stores/catalog';
 import { GROUP_ORDER, GROUP_LABEL, GROUP_OPTIONS } from '../utils/states';
-import StateLamp from '../components/StateLamp.vue';
+import StatusBadge from '../components/StatusBadge.vue';
 
 const catalog = useCatalog();
 
@@ -100,7 +100,7 @@ onMounted(() => catalog.fetchAll());
 			</div>
 
 			<div class="field-group">
-				<span class="flabel eyebrow">Grupo (PRIME)</span>
+				<span class="flabel eyebrow">Grupo</span>
 				<div class="segmented">
 					<button
 						v-for="opt in GROUP_OPTIONS"
@@ -117,10 +117,7 @@ onMounted(() => catalog.fetchAll());
 
 			<div class="preview">
 				<span class="eyebrow flabel">Prévia</span>
-				<span class="status-pill">
-					<StateLamp :color="color" :size="10" />
-					{{ label || 'status' }}
-				</span>
+				<StatusBadge :status="{ color, label: label || 'status' }" />
 			</div>
 
 			<div class="form-actions">
@@ -139,10 +136,7 @@ onMounted(() => catalog.fetchAll());
 				<h2 class="grp-title eyebrow">{{ g.label }}</h2>
 				<ul class="list">
 					<li v-for="s in g.items" :key="s._id" class="row card">
-						<span class="status-pill">
-							<StateLamp :color="s.color" :size="10" :pulse="s.group === 'em_andamento'" />
-							{{ s.label }}
-						</span>
+						<StatusBadge :status="s" />
 						<span class="hexcode num">{{ s.color }}</span>
 						<div class="row-actions">
 							<button class="icon-btn" type="button" title="Editar" @click="startEdit(s)">
@@ -263,22 +257,6 @@ onMounted(() => catalog.fetchAll());
 	gap: 12px;
 }
 
-.status-pill {
-	display: inline-flex;
-	align-items: center;
-	gap: 8px;
-	background: var(--surface);
-	border: 1px solid var(--border-subtle);
-	border-radius: var(--radius-pill);
-	padding: 0.3rem 0.8rem;
-	font-family: var(--font-head);
-	font-weight: 700;
-	font-size: var(--fs-xs);
-	letter-spacing: 0.06em;
-	text-transform: uppercase;
-	color: var(--color-ink);
-}
-
 .form-actions {
 	display: flex;
 	justify-content: flex-end;
@@ -311,11 +289,6 @@ onMounted(() => catalog.fetchAll());
 	align-items: center;
 	gap: 14px;
 	padding: 12px 16px;
-}
-
-.row .status-pill {
-	border: 0;
-	background: var(--bg-light);
 }
 
 .hexcode {

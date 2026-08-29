@@ -4,7 +4,7 @@ import api from '../services/api';
 import { useCatalog } from '../stores/catalog';
 import { fmtDate } from '../utils/states';
 import CategorySelect from '../components/CategorySelect.vue';
-import StateLamp from '../components/StateLamp.vue';
+import StatusBadge from '../components/StatusBadge.vue';
 
 const catalog = useCatalog();
 const todos = ref([]);
@@ -176,14 +176,7 @@ onMounted(load);
 									<span v-else class="muted-badge">Sem categoria</span>
 								</td>
 								<td class="col-state">
-									<span class="state">
-										<StateLamp
-											:color="t.status ? t.status.color : '#7a8593'"
-											:size="9"
-											:pulse="t.status?.group === 'em_andamento'"
-										/>
-										<span :class="{ muted: !t.status }">{{ t.status ? t.status.label : 'Sem Andamento' }}</span>
-									</span>
+									<StatusBadge :status="t.status" />
 								</td>
 							</tr>
 						</tbody>
@@ -427,22 +420,6 @@ onMounted(load);
 	font-size: var(--fs-xs);
 	letter-spacing: 0.06em;
 	text-transform: uppercase;
-	color: var(--text-muted-on-light);
-}
-
-.state {
-	display: inline-flex;
-	align-items: center;
-	gap: 8px;
-	font-family: var(--font-head);
-	font-weight: 700;
-	font-size: var(--fs-xs);
-	letter-spacing: 0.04em;
-	text-transform: uppercase;
-	color: var(--color-ink);
-}
-
-.state .muted {
 	color: var(--text-muted-on-light);
 }
 
