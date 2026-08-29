@@ -9,6 +9,12 @@ const routes = [
 		meta: { title: 'Painel', icon: 'mdi-view-dashboard-outline' },
 	},
 	{
+		path: '/listagem',
+		name: 'listagem',
+		component: () => import('../views/ListagemView.vue'),
+		meta: { title: 'Listagem', icon: 'mdi-format-list-bulleted' },
+	},
+	{
 		path: '/dashboard',
 		name: 'dashboard',
 		component: () => import('../views/DashboardView.vue'),

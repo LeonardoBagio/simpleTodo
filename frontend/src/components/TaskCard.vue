@@ -68,7 +68,7 @@ function onCategory(id) {
 			</div>
 		</div>
 
-		<h3 class="task-title" :class="{ done: isDone }">{{ todo.title }}</h3>
+		<h3 class="task-title" :class="{ done: isDone }" :title="todo.title">{{ todo.title }}</h3>
 
 		<span v-if="todo.issue" class="issue-tag num" title="Issue no GitHub">
 			<v-icon icon="mdi-github" size="14" />
@@ -182,12 +182,16 @@ function onCategory(id) {
 .task-title {
 	font-family: var(--font-head);
 	font-weight: 700;
-	font-size: 16px;
-	text-transform: uppercase;
-	letter-spacing: 0.02em;
-	line-height: 1.35;
+	font-size: 15px;
+	letter-spacing: -0.01em;
+	line-height: 1.4;
 	color: var(--color-ink);
 	overflow-wrap: anywhere;
+	display: -webkit-box;
+	-webkit-line-clamp: 3;
+	line-clamp: 3;
+	-webkit-box-orient: vertical;
+	overflow: hidden;
 }
 
 .task-title.done {

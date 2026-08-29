@@ -5,6 +5,7 @@ import { useCatalog } from './stores/catalog';
 
 const nav = [
 	{ to: '/painel', label: 'Painel', icon: 'mdi-view-dashboard-outline' },
+	{ to: '/listagem', label: 'Listagem', icon: 'mdi-format-list-bulleted' },
 	{ to: '/dashboard', label: 'Dashboard', icon: 'mdi-chart-box-outline' },
 	{ to: '/categorias', label: 'Categoria', icon: 'mdi-tag-multiple-outline' },
 	{ to: '/status', label: 'Status', icon: 'mdi-format-list-bulleted-type' },
@@ -29,6 +30,8 @@ onMounted(() => catalog.fetchAll());
 							:to="item.to"
 							class="menu-item"
 							active-class="is-active"
+							:title="item.label"
+							:aria-label="item.label"
 						>
 							<v-icon :icon="item.icon" size="18" />
 							<span>{{ item.label }}</span>
