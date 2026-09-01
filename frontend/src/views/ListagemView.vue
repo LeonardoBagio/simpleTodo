@@ -5,7 +5,7 @@ import { useCatalog } from '../stores/catalog';
 import { useFilters } from '../stores/filters';
 import { fmtDate } from '../utils/states';
 import CategorySelect from '../components/CategorySelect.vue';
-import StatusBadge from '../components/StatusBadge.vue';
+import StateSelect from '../components/StateSelect.vue';
 
 const catalog = useCatalog();
 const { state: filters } = useFilters();
@@ -13,6 +13,9 @@ const todos = ref([]);
 const loading = ref(true);
 const loaded = ref(false);
 const error = ref('');
+const busyIds = reactive(new Set());
+const editingCell = reactive({ id: null, field: null });
+const draft = ref('');
 
 const PERIODS = [
 	{ value: 'all', label: 'Tudo' },
@@ -88,6 +91,58 @@ async function load() {
 	} finally {
 		loading.value = false;
 	}
+}
+
+function upsert(todo) {
+	const i = todos.value.findIndex((t) => t._id === todo._id);
+	if (i !== -1) todos.value.splice(i, 1, todo);
+}
+
+async function setField(id, patch) {
+	busyIds.add(id);
+	error.value = '';
+	try {
+		const updated = await api.todos.update(id, patch);
+		upsert(updated);
+	} catch (e) {
+		error.value = 'Não foi possível atualizar a tarefa.';
+	} finally {
+		busyIds.delete(id);
+	}
+}
+
+function focusInput(el) {
+	if (el) {
+		el.focus();
+		el.select();
+	}
+}
+
+function isEditing(todo, field) {
+	return editingCell.id === todo._id && editingCell.field === field;
+}
+
+function startEdit(todo, field) {
+	editingCell.id = todo._id;
+	editingCell.field = field;
+	draft.value = field === 'issue' ? todo.issue || '' : todo.title || '';
+}
+
+function cancelEdit() {
+	editingCell.id = null;
+	editingCell.field = null;
+	draft.value = '';
+}
+
+function commitEdit(todo) {
+	if (editingCell.id !== todo._id) return;
+	const field = editingCell.field;
+	const value = draft.value.trim();
+	const original = field === 'issue' ? todo.issue || '' : todo.title || '';
+	cancelEdit();
+	if (field === 'title' && !value) return;
+	if (value === original) return;
+	setField(todo._id, { [field]: value });
 }
 
 onMounted(load);
@@ -185,25 +240,72 @@ onMounted(load);
 									</tr>
 								</thead>
 								<tbody>
-									<tr v-for="t in visibleItems(g)" :key="t._id" class="row">
+									<tr v-for="t in visibleItems(g)" :key="t._id" class="row" :class="{ busy: busyIds.has(t._id) }">
 										<td class="col-when">
 											<span class="when num">{{ fmtDate(t.updatedAt) }}</span>
 										</td>
 										<td class="col-issue">
-											<span v-if="t.issue" class="issue num">#{{ t.issue }}</span>
-											<span v-else class="dash">—</span>
+											<input
+												v-if="isEditing(t, 'issue')"
+												:ref="focusInput"
+												v-model="draft"
+												class="cell-input issue-input num"
+												type="text"
+												aria-label="Editar issue"
+												placeholder="—"
+												@keydown.enter.prevent="commitEdit(t)"
+												@keydown.esc.prevent="cancelEdit"
+												@blur="commitEdit(t)"
+											/>
+											<button
+												v-else
+												type="button"
+												class="cell-edit issue-edit"
+												title="Editar issue"
+												@click="startEdit(t, 'issue')"
+											>
+												<span v-if="t.issue" class="issue num">#{{ t.issue }}</span>
+												<span v-else class="dash">—</span>
+											</button>
 										</td>
 										<td class="col-task">
-											<span class="task-title" :class="{ done: t.status?.group === 'concluidos' }" :title="t.title">
-												{{ t.title }}
-											</span>
+											<input
+												v-if="isEditing(t, 'title')"
+												:ref="focusInput"
+												v-model="draft"
+												class="cell-input"
+												type="text"
+												aria-label="Editar tarefa"
+												@keydown.enter.prevent="commitEdit(t)"
+												@keydown.esc.prevent="cancelEdit"
+												@blur="commitEdit(t)"
+											/>
+											<button
+												v-else
+												type="button"
+												class="cell-edit task-edit"
+												:title="t.title"
+												@click="startEdit(t, 'title')"
+											>
+												<span class="task-title" :class="{ done: t.status?.group === 'concluidos' }">
+													{{ t.title }}
+												</span>
+											</button>
 										</td>
 										<td class="col-cat">
-											<span v-if="t.category" class="cat-chip" :style="{ background: t.category.color }">{{ t.category.label }}</span>
-											<span v-else class="cat-chip is-empty">Sem categoria</span>
+											<CategorySelect
+												:model-value="t.category ? t.category._id : null"
+												all-label="Sem categoria"
+												@update:model-value="(id) => setField(t._id, { category: id })"
+											/>
 										</td>
 										<td class="col-state">
-											<StatusBadge :status="t.status" />
+											<StateSelect
+												:model-value="t.status ? t.status._id : null"
+												all-label="Sem Andamento"
+												placeholder="Sem Andamento"
+												@update:model-value="(id) => setField(t._id, { status: id })"
+											/>
 										</td>
 									</tr>
 								</tbody>
@@ -359,6 +461,11 @@ onMounted(load);
 	background: var(--bg-light);
 }
 
+.row.busy td {
+	opacity: 0.5;
+	pointer-events: none;
+}
+
 .col-when {
 	width: 150px;
 	white-space: nowrap;
@@ -419,25 +526,51 @@ onMounted(load);
 	text-decoration-color: color-mix(in srgb, var(--lamp-done) 70%, transparent);
 }
 
-.cat-chip {
-	display: inline-flex;
-	align-items: center;
-	max-width: 100%;
-	border-radius: var(--radius-pill);
-	padding: 0.28rem 0.7rem;
-	font-family: var(--font-head);
-	font-weight: 700;
-	font-size: var(--fs-xs);
-	line-height: 1.25;
-	letter-spacing: 0.06em;
-	text-transform: uppercase;
-	color: #fff;
-	overflow-wrap: anywhere;
+.cell-edit {
+	display: block;
+	width: 100%;
+	text-align: left;
+	background: transparent;
+	border: 1px solid transparent;
+	border-radius: var(--radius-sm);
+	padding: 5px 7px;
+	cursor: text;
+	transition: background 0.14s var(--ease), border-color 0.14s var(--ease);
 }
 
-.cat-chip.is-empty {
-	background: var(--bg-light);
-	color: var(--text-muted-on-light);
+.cell-edit:hover {
+	background: var(--surface);
+	border-color: var(--border-strong);
+}
+
+.cell-edit:focus-visible {
+	outline: none;
+	background: var(--surface);
+	border-color: var(--color-ink);
+}
+
+.issue-edit {
+	display: inline-flex;
+	width: auto;
+}
+
+.cell-input {
+	width: 100%;
+	box-sizing: border-box;
+	background: var(--surface);
+	border: 1px solid var(--color-ink);
+	border-radius: var(--radius-sm);
+	padding: 5px 7px;
+	font-family: var(--font-head);
+	font-weight: 700;
+	font-size: 14px;
+	letter-spacing: -0.01em;
+	color: var(--color-ink);
+	outline: none;
+}
+
+.issue-input {
+	font-size: 12px;
 }
 
 .load-more-wrap {
