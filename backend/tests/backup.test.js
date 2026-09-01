@@ -106,3 +106,53 @@ describe('POST /api/backups/restore (erros)', () => {
 		expect(res.status).toBe(404);
 	});
 });
+
+describe('nuvem (rclone)', () => {
+	const configPath = path.join(backupDir, 'rclone.conf');
+	afterEach(() => fs.rmSync(configPath, { force: true }));
+
+	it('GET /remote reporta não configurado sem rclone.conf', async () => {
+		const res = await request(app).get('/api/backups/remote');
+		expect(res.status).toBe(200);
+		expect(res.body.configured).toBe(false);
+		expect(res.body.remote).toBe('gdrive:simpletodo-backups');
+	});
+
+	it('GET /remote reporta configurado quando o remote existe no rclone.conf', async () => {
+		fs.writeFileSync(configPath, '[gdrive]\ntype = drive\n');
+		const res = await request(app).get('/api/backups/remote');
+		expect(res.status).toBe(200);
+		expect(res.body.configured).toBe(true);
+	});
+
+	it('POST /remote/push recusa com 409 quando a nuvem não está configurada', async () => {
+		const res = await request(app).post('/api/backups/remote/push');
+		expect(res.status).toBe(409);
+		expect(res.body.message).toMatch(/nuvem não configurada/i);
+	});
+
+	it('POST /remote/configure rejeita token inválido com 400', async () => {
+		const res = await request(app)
+			.post('/api/backups/remote/configure')
+			.send({ token: 'não é json' });
+		expect(res.status).toBe(400);
+	});
+
+	it('POST /remote/configure grava o rclone.conf e passa a reportar configurado', async () => {
+		const token = JSON.stringify({
+			access_token: 'x',
+			token_type: 'Bearer',
+			refresh_token: 'y',
+			expiry: '2030-01-01T00:00:00Z',
+		});
+		const res = await request(app)
+			.post('/api/backups/remote/configure')
+			.send({ token });
+		expect(res.status).toBe(200);
+		expect(res.body.configured).toBe(true);
+		expect(fs.readFileSync(configPath, 'utf8')).toMatch(/^\[gdrive\]/m);
+
+		const status = await request(app).get('/api/backups/remote');
+		expect(status.body.configured).toBe(true);
+	});
+});

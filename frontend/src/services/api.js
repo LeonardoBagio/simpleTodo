@@ -75,5 +75,14 @@ export default {
 		restore(name) {
 			return http.post('/backups/restore', { name }).then((r) => r.data);
 		},
+		remoteStatus() {
+			return http.get('/backups/remote').then((r) => r.data);
+		},
+		configureRemote(token) {
+			return http.post('/backups/remote/configure', { token }).then((r) => r.data);
+		},
+		push() {
+			return http.post('/backups/remote/push').then((r) => r.data);
+		},
 	},
 };

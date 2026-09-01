@@ -2,7 +2,11 @@ const fs = require('fs');
 const path = require('path');
 const zlib = require('zlib');
 const crypto = require('crypto');
+const { execFile } = require('child_process');
+const { promisify } = require('util');
 const { EJSON } = require('bson');
+
+const pExecFile = promisify(execFile);
 
 const FILE_EXT = '.stbackup';
 const NAME_RE = /^simpletodo-\d{8}-\d{6}\.stbackup$/;
@@ -18,6 +22,12 @@ class BackupError extends Error {
 			NOT_FOUND: [404, 'Backup não encontrado'],
 			CORRUPT: [422, 'Arquivo de backup corrompido'],
 			DECRYPT_FAILED: [422, 'Falha ao descriptografar (chave incorreta?)'],
+			REMOTE_NOT_CONFIGURED: [
+				409,
+				'Nuvem não configurada. Autentique pelo terminal: just backup-remote-init',
+			],
+			INVALID_TOKEN: [400, 'Token do rclone inválido (cole o JSON gerado por rclone authorize)'],
+			PUSH_FAILED: [502, 'Falha ao enviar os backups para a nuvem'],
 		};
 		const [status, message] = map[code] || [500, 'Erro de backup'];
 		super(message);
@@ -143,4 +153,93 @@ async function restore(db, name) {
 	return { restored, collections: Object.keys(collections).length };
 }
 
-module.exports = { BackupError, isConfigured, configure, list, create, restore };
+function remoteTarget() {
+	return process.env.RCLONE_REMOTE || 'gdrive:simpletodo-backups';
+}
+
+function rcloneConfigPath() {
+	return process.env.RCLONE_CONFIG || path.join(dir(), 'rclone.conf');
+}
+
+function remoteConfigured() {
+	const config = rcloneConfigPath();
+	if (!fs.existsSync(config)) return false;
+	const name = remoteTarget().split(':')[0];
+	try {
+		return new RegExp(`^\\[${name}\\]`, 'm').test(fs.readFileSync(config, 'utf8'));
+	} catch (error) {
+		return false;
+	}
+}
+
+function remoteStatus() {
+	return { configured: remoteConfigured(), remote: remoteTarget() };
+}
+
+function configureRemote(rawToken) {
+	const match = String(rawToken || '').match(/\{[\s\S]*\}/);
+	if (!match) throw new BackupError('INVALID_TOKEN');
+
+	let parsed;
+	try {
+		parsed = JSON.parse(match[0]);
+	} catch (error) {
+		throw new BackupError('INVALID_TOKEN');
+	}
+	if (!parsed || typeof parsed !== 'object' || !parsed.access_token) {
+		throw new BackupError('INVALID_TOKEN');
+	}
+
+	const name = remoteTarget().split(':')[0];
+	const config = rcloneConfigPath();
+	fs.mkdirSync(path.dirname(config), { recursive: true });
+	fs.writeFileSync(
+		config,
+		`[${name}]\ntype = drive\ntoken = ${JSON.stringify(parsed)}\n`,
+		{ mode: 0o600 },
+	);
+	return remoteStatus();
+}
+
+async function remoteCount() {
+	try {
+		const { stdout } = await pExecFile(
+			'rclone',
+			['lsjson', remoteTarget(), '--include', '*.stbackup', '--config', rcloneConfigPath()],
+			{ timeout: 60000 },
+		);
+		const files = JSON.parse(stdout || '[]');
+		return Array.isArray(files) ? files.length : 0;
+	} catch (error) {
+		return null;
+	}
+}
+
+async function push() {
+	if (!remoteConfigured()) throw new BackupError('REMOTE_NOT_CONFIGURED');
+	ensureDir();
+	try {
+		await pExecFile(
+			'rclone',
+			['copy', dir(), remoteTarget(), '--include', '*.stbackup', '--config', rcloneConfigPath()],
+			{ timeout: 120000 },
+		);
+	} catch (error) {
+		throw new BackupError('PUSH_FAILED');
+	}
+	return { remote: remoteTarget(), remoteCount: await remoteCount() };
+}
+
+module.exports = {
+	BackupError,
+	isConfigured,
+	configure,
+	list,
+	create,
+	restore,
+	remoteTarget,
+	remoteConfigured,
+	remoteStatus,
+	configureRemote,
+	push,
+};

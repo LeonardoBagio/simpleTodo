@@ -12,12 +12,15 @@ services:
       - ./backend:/usr/src/app
       - /usr/src/app/node_modules
       - ./backups:/usr/src/app/backups
+      - ./rclone-config:/config/rclone
     environment:
       - NODE_ENV=${NODE_ENV:-development}
       - NODE_PORT=${NODE_PORT:-3000}
       - PORT=${NODE_PORT:-3000}
       - TZ=${TZ:-America/Sao_Paulo}
       - MONGO_URI=mongodb://${DATA_BASE_USER}:${DATA_BASE_PASSWORD}@database:${DATA_BASE_PORT:-27017}/${DATA_BASE_NAME}?authSource=admin
+      - RCLONE_CONFIG=/config/rclone/rclone.conf
+      - RCLONE_REMOTE=${RCLONE_REMOTE:-gdrive:simpletodo-backups}
     command: npm run dev
     #depends_on:
     #  database:

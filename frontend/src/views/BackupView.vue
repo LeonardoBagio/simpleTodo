@@ -16,8 +16,21 @@ const restoring = ref(false);
 const dialog = ref(false);
 const selected = ref('');
 
+const remoteConfigured = ref(false);
+const remoteName = ref('');
+const pushing = ref(false);
+
+const remoteDialog = ref(false);
+const tokenInput = ref('');
+const savingRemote = ref(false);
+const copied = ref(false);
+
+const authCommand = 'docker run --rm -it --network host rclone/rclone authorize "drive"';
+
 const lastBackup = computed(() => backups.value[0] || null);
-const busy = computed(() => configuring.value || creating.value || restoring.value);
+const busy = computed(
+	() => configuring.value || creating.value || restoring.value || pushing.value,
+);
 
 function fmtSize(bytes) {
 	if (!bytes && bytes !== 0) return '';
@@ -30,9 +43,14 @@ async function load() {
 	loading.value = true;
 	error.value = '';
 	try {
-		const data = await api.backups.status();
+		const [data, remote] = await Promise.all([
+			api.backups.status(),
+			api.backups.remoteStatus().catch(() => ({ configured: false, remote: '' })),
+		]);
 		configured.value = data.configured;
 		backups.value = data.backups || [];
+		remoteConfigured.value = remote.configured;
+		remoteName.value = remote.remote || '';
 	} catch (e) {
 		error.value = 'Não foi possível carregar o estado dos backups.';
 	} finally {
@@ -89,6 +107,57 @@ async function confirmRestore() {
 		error.value = e?.response?.data?.message || 'Não foi possível restaurar o backup.';
 	} finally {
 		restoring.value = false;
+	}
+}
+
+async function copyCommand() {
+	try {
+		await navigator.clipboard.writeText(authCommand);
+		copied.value = true;
+		setTimeout(() => (copied.value = false), 1500);
+	} catch {
+		copied.value = false;
+	}
+}
+
+function openRemoteConfig() {
+	tokenInput.value = '';
+	remoteDialog.value = true;
+}
+
+async function saveRemote() {
+	if (!tokenInput.value.trim()) return;
+	savingRemote.value = true;
+	error.value = '';
+	notice.value = '';
+	try {
+		const data = await api.backups.configureRemote(tokenInput.value.trim());
+		remoteConfigured.value = data.configured;
+		remoteName.value = data.remote || remoteName.value;
+		remoteDialog.value = false;
+		notice.value = 'Nuvem configurada. Já pode enviar os backups.';
+	} catch (e) {
+		error.value = e?.response?.data?.message || 'Não foi possível configurar a nuvem.';
+	} finally {
+		savingRemote.value = false;
+	}
+}
+
+async function pushToCloud() {
+	pushing.value = true;
+	error.value = '';
+	notice.value = '';
+	try {
+		const result = await api.backups.push();
+		const count = result.remoteCount;
+		notice.value =
+			count == null
+				? 'Backups enviados para a nuvem.'
+				: `Backups enviados para a nuvem (${count} na nuvem).`;
+	} catch (e) {
+		error.value = e?.response?.data?.message || 'Não foi possível enviar para a nuvem.';
+	} finally {
+		pushing.value = false;
 	}
 }
 
@@ -203,6 +272,67 @@ onMounted(load);
 			</p>
 		</section>
 
+		<section class="card status-card">
+			<div class="status-head">
+				<span class="eyebrow flabel">Nuvem (rclone)</span>
+				<span class="chip" :class="remoteConfigured ? 'chip-ok' : 'chip-off'">
+					<v-icon
+						:icon="remoteConfigured ? 'mdi-cloud-check-outline' : 'mdi-cloud-off-outline'"
+						size="15"
+					/>
+					{{ remoteConfigured ? 'Configurado' : 'Não configurado' }}
+				</span>
+			</div>
+
+			<div class="status-body">
+				<div class="last">
+					<span class="eyebrow flabel">Destino</span>
+					<template v-if="loading">
+						<span class="last-value muted">Carregando…</span>
+					</template>
+					<template v-else-if="remoteConfigured">
+						<span class="last-value num">{{ remoteName }}</span>
+						<span class="last-meta">Envia os arquivos .stbackup (a chave nunca vai junto).</span>
+					</template>
+					<template v-else>
+						<span class="last-value muted">Não configurado</span>
+					</template>
+				</div>
+
+				<div class="status-actions">
+					<button
+						v-if="!remoteConfigured"
+						class="btn btn-primary"
+						type="button"
+						:disabled="busy || loading"
+						@click="openRemoteConfig"
+					>
+						<v-icon icon="mdi-cloud-cog-outline" size="16" />
+						Configurar nuvem
+					</button>
+
+					<button
+						class="btn"
+						:class="remoteConfigured ? 'btn-primary' : 'btn-outline'"
+						type="button"
+						:disabled="busy || !remoteConfigured || backups.length === 0"
+						@click="pushToCloud"
+					>
+						<v-icon icon="mdi-cloud-upload-outline" size="16" />
+						{{ pushing ? 'Enviando…' : 'Enviar para a nuvem' }}
+					</button>
+				</div>
+			</div>
+
+			<p v-if="!remoteConfigured && !loading" class="key-warn key-info">
+				<v-icon icon="mdi-information-outline" size="16" />
+				<span>
+					O login no Google acontece no navegador (um comando único); depois é só
+					colar o token na tela em <strong>Configurar nuvem</strong>.
+				</span>
+			</p>
+		</section>
+
 		<v-dialog v-model="dialog" max-width="560">
 			<div class="card dialog">
 				<header class="dialog-head">
@@ -249,6 +379,63 @@ onMounted(load);
 					>
 						<v-icon icon="mdi-database-arrow-up-outline" size="16" />
 						{{ restoring ? 'Restaurando…' : 'Restaurar' }}
+					</button>
+				</div>
+			</div>
+		</v-dialog>
+
+		<v-dialog v-model="remoteDialog" max-width="620">
+			<div class="card dialog">
+				<header class="dialog-head">
+					<h2 class="section-title dialog-title">Configurar nuvem</h2>
+					<button class="icon-btn" type="button" aria-label="Fechar" @click="remoteDialog = false">
+						<v-icon icon="mdi-close" size="18" />
+					</button>
+				</header>
+
+				<ol class="steps">
+					<li>
+						<span class="step-label eyebrow">1 · Gerar o token</span>
+						<p class="step-desc section-desc">
+							Rode o comando abaixo no terminal. Ele abre o navegador para o login no
+							Google e, ao final, imprime um token (um JSON).
+						</p>
+						<div class="cmd-row">
+							<code class="cmd">{{ authCommand }}</code>
+							<button
+								class="icon-btn"
+								type="button"
+								:title="copied ? 'Copiado!' : 'Copiar'"
+								@click="copyCommand"
+							>
+								<v-icon :icon="copied ? 'mdi-check' : 'mdi-content-copy'" size="16" />
+							</button>
+						</div>
+					</li>
+					<li>
+						<span class="step-label eyebrow">2 · Colar o token</span>
+						<p class="step-desc section-desc">
+							Cole aqui o JSON impresso pelo comando (o trecho entre as setas).
+						</p>
+						<textarea
+							v-model="tokenInput"
+							class="token-field"
+							rows="4"
+							placeholder='{"access_token":"...","token_type":"Bearer","refresh_token":"...","expiry":"..."}'
+						></textarea>
+					</li>
+				</ol>
+
+				<div class="dialog-actions">
+					<button class="btn btn-outline" type="button" @click="remoteDialog = false">Cancelar</button>
+					<button
+						class="btn btn-primary"
+						type="button"
+						:disabled="!tokenInput.trim() || savingRemote"
+						@click="saveRemote"
+					>
+						<v-icon icon="mdi-content-save-outline" size="16" />
+						{{ savingRemote ? 'Salvando…' : 'Salvar' }}
 					</button>
 				</div>
 			</div>
@@ -379,6 +566,17 @@ code {
 	color: inherit;
 }
 
+.key-info {
+	background: var(--bg-light);
+	color: var(--text-muted-on-light);
+	border-color: var(--border-subtle);
+}
+
+.key-info code {
+	background: var(--surface);
+	color: var(--color-ink);
+}
+
 .icon-btn {
 	width: 34px;
 	height: 34px;
@@ -426,6 +624,58 @@ code {
 	padding: 11px 14px;
 	font-size: var(--fs-sm);
 	font-weight: 600;
+}
+
+.steps {
+	list-style: none;
+	padding: 0;
+	margin: 0;
+	display: flex;
+	flex-direction: column;
+	gap: 18px;
+}
+
+.step-label {
+	font-size: 10px;
+	color: var(--text-muted-on-light);
+}
+
+.step-desc {
+	margin: 6px 0 8px;
+}
+
+.cmd-row {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	padding: 10px 12px;
+	background: var(--bg-light);
+	border-radius: var(--radius-sm);
+}
+
+.cmd {
+	flex: 1;
+	min-width: 0;
+	font-family: var(--font-head);
+	font-size: 12px;
+	font-weight: 700;
+	color: var(--color-ink);
+	background: none;
+	padding: 0;
+	overflow-x: auto;
+	white-space: nowrap;
+}
+
+.token-field {
+	width: 100%;
+	resize: vertical;
+	font-family: var(--font-head);
+	font-size: 12px;
+	padding: 10px 12px;
+	border: 1px solid var(--border-strong);
+	border-radius: var(--radius-sm);
+	background: var(--surface);
+	color: var(--color-ink);
 }
 
 .restore-list {

@@ -54,3 +54,35 @@ exports.restore = async (req, res, next) => {
 		next(error);
 	}
 };
+
+exports.remoteStatus = async (req, res, next) => {
+	try {
+		res.status(StatusCodes.OK).json(backupService.remoteStatus());
+	} catch (error) {
+		next(error);
+	}
+};
+
+exports.configureRemote = async (req, res, next) => {
+	try {
+		const token = req.body && req.body.token;
+		if (!token) {
+			return res
+				.status(StatusCodes.BAD_REQUEST)
+				.json({ message: 'Informe o token do rclone' });
+		}
+
+		res.status(StatusCodes.OK).json(backupService.configureRemote(token));
+	} catch (error) {
+		next(error);
+	}
+};
+
+exports.push = async (req, res, next) => {
+	try {
+		const result = await backupService.push();
+		res.status(StatusCodes.OK).json(result);
+	} catch (error) {
+		next(error);
+	}
+};

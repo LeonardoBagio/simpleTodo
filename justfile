@@ -60,8 +60,8 @@ test:
 # Requer o backend no ar (just start / just create).
 _api := 'http://localhost:' + env_var_or_default('NODE_PORT', '3000') + '/api/backups'
 
-# Destino na nuvem (rclone). Ajuste o remote/pasta se quiser.
-_rclone_remote := 'gdrive:simpletodo-backups'
+# Destino na nuvem (rclone). Defina RCLONE_REMOTE no .env para mudar.
+_rclone_remote := env_var_or_default('RCLONE_REMOTE', 'gdrive:simpletodo-backups')
 
 # 🔑  Configura a criptografia de backup (gera a chave). Rode uma vez.
 backup-init:

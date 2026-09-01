@@ -1,6 +1,7 @@
 # Estágio 0: Base
 FROM node:24-alpine as base
 WORKDIR /usr/src/app
+RUN apk add --no-cache rclone
 COPY package*.json ./
 
 # Estágio 1: Desenvolvimento
@@ -16,6 +17,7 @@ RUN npm ci --omit=dev && npm cache clean --force
 # Estágio 3: Produção
 FROM node:24-alpine as production
 WORKDIR /usr/src/app
+RUN apk add --no-cache rclone
 ENV NODE_ENV=production
 COPY package*.json ./
 COPY --from=builder /usr/src/app/node_modules ./node_modules
