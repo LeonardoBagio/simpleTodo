@@ -27,6 +27,31 @@ const copied = ref(false);
 
 const authCommand = 'docker run --rm -it --network host rclone/rclone authorize "drive"';
 
+const schedule = ref({
+	enabled: false,
+	frequency: 'daily',
+	time: '02:00',
+	dayOfWeek: 0,
+	push: true,
+});
+const scheduleInfo = ref({ nextRun: null, lastRun: null, lastStatus: null, lastError: null });
+const savingSchedule = ref(false);
+
+const frequencyOptions = [
+	{ value: 'hourly', label: 'A cada hora' },
+	{ value: 'daily', label: 'Diário' },
+	{ value: 'weekly', label: 'Semanal' },
+];
+const weekdays = [
+	'Domingo',
+	'Segunda',
+	'Terça',
+	'Quarta',
+	'Quinta',
+	'Sexta',
+	'Sábado',
+];
+
 const lastBackup = computed(() => backups.value[0] || null);
 const busy = computed(
 	() => configuring.value || creating.value || restoring.value || pushing.value,
@@ -43,14 +68,16 @@ async function load() {
 	loading.value = true;
 	error.value = '';
 	try {
-		const [data, remote] = await Promise.all([
+		const [data, remote, sched] = await Promise.all([
 			api.backups.status(),
 			api.backups.remoteStatus().catch(() => ({ configured: false, remote: '' })),
+			api.backups.schedule().catch(() => null),
 		]);
 		configured.value = data.configured;
 		backups.value = data.backups || [];
 		remoteConfigured.value = remote.configured;
 		remoteName.value = remote.remote || '';
+		if (sched) applySchedule(sched);
 	} catch (e) {
 		error.value = 'Não foi possível carregar o estado dos backups.';
 	} finally {
@@ -140,6 +167,39 @@ async function saveRemote() {
 		error.value = e?.response?.data?.message || 'Não foi possível configurar a nuvem.';
 	} finally {
 		savingRemote.value = false;
+	}
+}
+
+function applySchedule(data) {
+	schedule.value = {
+		enabled: data.enabled,
+		frequency: data.frequency,
+		time: data.time,
+		dayOfWeek: data.dayOfWeek,
+		push: data.push,
+	};
+	scheduleInfo.value = {
+		nextRun: data.nextRun,
+		lastRun: data.lastRun,
+		lastStatus: data.lastStatus,
+		lastError: data.lastError,
+	};
+}
+
+async function saveSchedule() {
+	savingSchedule.value = true;
+	error.value = '';
+	notice.value = '';
+	try {
+		const data = await api.backups.saveSchedule(schedule.value);
+		applySchedule(data);
+		notice.value = data.enabled
+			? 'Agendamento salvo.'
+			: 'Agendamento desativado.';
+	} catch (e) {
+		error.value = e?.response?.data?.message || 'Não foi possível salvar o agendamento.';
+	} finally {
+		savingSchedule.value = false;
 	}
 }
 
@@ -331,6 +391,95 @@ onMounted(load);
 					colar o token na tela em <strong>Configurar nuvem</strong>.
 				</span>
 			</p>
+		</section>
+
+		<section class="card status-card">
+			<div class="status-head">
+				<span class="eyebrow flabel">Agendamento</span>
+				<span class="chip" :class="schedule.enabled ? 'chip-ok' : 'chip-off'">
+					<v-icon
+						:icon="schedule.enabled ? 'mdi-clock-check-outline' : 'mdi-clock-outline'"
+						size="15"
+					/>
+					{{ schedule.enabled ? 'Ativo' : 'Desativado' }}
+				</span>
+			</div>
+
+			<div class="sched-form">
+				<label class="switch-row">
+					<input type="checkbox" class="checkbox" v-model="schedule.enabled" />
+					<span>Fazer backup automaticamente</span>
+				</label>
+
+				<div class="sched-fields">
+					<label class="field-group grow">
+						<span class="flabel eyebrow">Frequência</span>
+						<select v-model="schedule.frequency" class="field">
+							<option v-for="o in frequencyOptions" :key="o.value" :value="o.value">
+								{{ o.label }}
+							</option>
+						</select>
+					</label>
+
+					<label v-if="schedule.frequency === 'weekly'" class="field-group grow">
+						<span class="flabel eyebrow">Dia da semana</span>
+						<select v-model.number="schedule.dayOfWeek" class="field">
+							<option v-for="(d, i) in weekdays" :key="i" :value="i">{{ d }}</option>
+						</select>
+					</label>
+
+					<label class="field-group">
+						<span class="flabel eyebrow">
+							{{ schedule.frequency === 'hourly' ? 'Minuto (usa só os min.)' : 'Horário' }}
+						</span>
+						<input type="time" class="field" v-model="schedule.time" />
+					</label>
+				</div>
+
+				<label class="switch-row">
+					<input type="checkbox" class="checkbox" v-model="schedule.push" />
+					<span>Enviar para a nuvem após o backup</span>
+				</label>
+
+				<p v-if="schedule.push && !remoteConfigured" class="key-warn key-info">
+					<v-icon icon="mdi-information-outline" size="16" />
+					<span>
+						A nuvem ainda não está configurada — o backup será feito, mas o envio é
+						ignorado até você configurar a nuvem acima.
+					</span>
+				</p>
+
+				<div class="sched-foot">
+					<div class="sched-status">
+						<template v-if="schedule.enabled && scheduleInfo.nextRun">
+							<span class="flabel eyebrow">Próxima</span>
+							<span class="sched-value">{{ fmtDate(scheduleInfo.nextRun) }}</span>
+						</template>
+						<template v-if="scheduleInfo.lastRun">
+							<span class="flabel eyebrow">Última</span>
+							<span class="sched-value">
+								{{ fmtDate(scheduleInfo.lastRun) }}
+								<span
+									class="run-badge"
+									:class="scheduleInfo.lastStatus === 'ok' ? 'ok' : 'err'"
+								>
+									{{ scheduleInfo.lastStatus === 'ok' ? 'ok' : 'falhou' }}
+								</span>
+							</span>
+						</template>
+					</div>
+
+					<button
+						class="btn btn-primary"
+						type="button"
+						:disabled="busy || savingSchedule"
+						@click="saveSchedule"
+					>
+						<v-icon icon="mdi-content-save-outline" size="16" />
+						{{ savingSchedule ? 'Salvando…' : 'Salvar agendamento' }}
+					</button>
+				</div>
+			</div>
 		</section>
 
 		<v-dialog v-model="dialog" max-width="560">
@@ -575,6 +724,93 @@ code {
 .key-info code {
 	background: var(--surface);
 	color: var(--color-ink);
+}
+
+.sched-form {
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+}
+
+.switch-row {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	font-size: var(--fs-sm);
+	font-weight: 600;
+	color: var(--color-ink);
+	cursor: pointer;
+}
+
+.checkbox {
+	width: 17px;
+	height: 17px;
+	accent-color: var(--color-ink);
+	cursor: pointer;
+	flex: none;
+}
+
+.sched-fields {
+	display: flex;
+	gap: 14px;
+	flex-wrap: wrap;
+}
+
+.field-group {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+}
+
+.field-group.grow {
+	flex: 1;
+	min-width: 160px;
+}
+
+.sched-foot {
+	display: flex;
+	align-items: flex-end;
+	justify-content: space-between;
+	gap: 16px;
+	flex-wrap: wrap;
+	border-top: 1px solid var(--border-subtle);
+	padding-top: 16px;
+}
+
+.sched-status {
+	display: grid;
+	grid-template-columns: auto auto;
+	gap: 4px 12px;
+	align-items: center;
+}
+
+.sched-value {
+	font-family: var(--font-head);
+	font-weight: 700;
+	font-size: 13px;
+	color: var(--color-ink);
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.run-badge {
+	font-size: 10px;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+	padding: 2px 7px;
+	border-radius: 999px;
+}
+
+.run-badge.ok {
+	background: color-mix(in srgb, #2f9e44 14%, transparent);
+	color: #2f9e44;
+}
+
+.run-badge.err {
+	background: color-mix(in srgb, var(--lamp-trash) 14%, transparent);
+	color: var(--lamp-trash);
 }
 
 .icon-btn {

@@ -84,5 +84,11 @@ export default {
 		push() {
 			return http.post('/backups/remote/push').then((r) => r.data);
 		},
+		schedule() {
+			return http.get('/backups/schedule').then((r) => r.data);
+		},
+		saveSchedule(config) {
+			return http.put('/backups/schedule', config).then((r) => r.data);
+		},
 	},
 };

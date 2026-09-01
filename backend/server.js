@@ -1,10 +1,13 @@
 const dotenv = require('dotenv');
 const connectDB = require('./config/dataBase');
 const seedCatalog = require('./config/seed');
+const backupScheduler = require('./services/backupScheduler');
 const app = require('./app');
 
 dotenv.config();
-connectDB().then(seedCatalog);
+connectDB()
+	.then(seedCatalog)
+	.then(() => backupScheduler.start());
 
 const PORT = process.env.NODE_PORT || process.env.PORT || 3000;
 const server = app.listen(PORT, () => {

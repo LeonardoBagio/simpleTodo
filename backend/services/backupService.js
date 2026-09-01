@@ -27,6 +27,7 @@ class BackupError extends Error {
 				'Nuvem não configurada. Autentique pelo terminal: just backup-remote-init',
 			],
 			INVALID_TOKEN: [400, 'Token do rclone inválido (cole o JSON gerado por rclone authorize)'],
+			INVALID_SCHEDULE: [400, 'Configuração de agendamento inválida'],
 			PUSH_FAILED: [502, 'Falha ao enviar os backups para a nuvem'],
 		};
 		const [status, message] = map[code] || [500, 'Erro de backup'];

@@ -156,3 +156,54 @@ describe('nuvem (rclone)', () => {
 		expect(status.body.configured).toBe(true);
 	});
 });
+
+describe('agendamento', () => {
+	afterEach(() => fs.rmSync(path.join(backupDir, 'schedule.json'), { force: true }));
+
+	it('GET /schedule retorna os padrões (desativado)', async () => {
+		const res = await request(app).get('/api/backups/schedule');
+		expect(res.status).toBe(200);
+		expect(res.body.enabled).toBe(false);
+		expect(res.body.frequency).toBe('daily');
+		expect(res.body.nextRun).toBeNull();
+	});
+
+	it('PUT /schedule ativa e calcula a próxima execução', async () => {
+		const res = await request(app)
+			.put('/api/backups/schedule')
+			.send({ enabled: true, frequency: 'daily', time: '02:00', push: true });
+		expect(res.status).toBe(200);
+		expect(res.body.enabled).toBe(true);
+		expect(res.body.nextRun).not.toBeNull();
+		expect(new Date(res.body.nextRun).getTime()).toBeGreaterThan(Date.now());
+	});
+
+	it('PUT /schedule para semanal calcula nextRun no futuro', async () => {
+		const res = await request(app)
+			.put('/api/backups/schedule')
+			.send({ enabled: true, frequency: 'weekly', time: '03:30', dayOfWeek: 1 });
+		expect(res.status).toBe(200);
+		expect(new Date(res.body.nextRun).getTime()).toBeGreaterThan(Date.now());
+	});
+
+	it('PUT /schedule zera nextRun ao desativar', async () => {
+		await request(app)
+			.put('/api/backups/schedule')
+			.send({ enabled: true, frequency: 'daily', time: '02:00' });
+		const res = await request(app).put('/api/backups/schedule').send({ enabled: false });
+		expect(res.body.enabled).toBe(false);
+		expect(res.body.nextRun).toBeNull();
+	});
+
+	it('PUT /schedule rejeita frequência inválida com 400', async () => {
+		const res = await request(app)
+			.put('/api/backups/schedule')
+			.send({ frequency: 'a-cada-minuto' });
+		expect(res.status).toBe(400);
+	});
+
+	it('PUT /schedule rejeita horário inválido com 400', async () => {
+		const res = await request(app).put('/api/backups/schedule').send({ time: '25:99' });
+		expect(res.status).toBe(400);
+	});
+});

@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 const { StatusCodes } = require('http-status-codes');
 const backupService = require('../services/backupService');
+const backupScheduler = require('../services/backupScheduler');
 
 function db() {
 	return mongoose.connection.db;
@@ -82,6 +83,22 @@ exports.push = async (req, res, next) => {
 	try {
 		const result = await backupService.push();
 		res.status(StatusCodes.OK).json(result);
+	} catch (error) {
+		next(error);
+	}
+};
+
+exports.scheduleStatus = async (req, res, next) => {
+	try {
+		res.status(StatusCodes.OK).json(backupScheduler.status());
+	} catch (error) {
+		next(error);
+	}
+};
+
+exports.scheduleUpdate = async (req, res, next) => {
+	try {
+		res.status(StatusCodes.OK).json(backupScheduler.setConfig(req.body || {}));
 	} catch (error) {
 		next(error);
 	}
