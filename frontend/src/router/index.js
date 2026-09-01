@@ -32,6 +32,12 @@ const routes = [
 		component: () => import('../views/StatusView.vue'),
 		meta: { title: 'Status', icon: 'mdi-format-list-bulleted-type' },
 	},
+	{
+		path: '/backup',
+		name: 'backup',
+		component: () => import('../views/BackupView.vue'),
+		meta: { title: 'Backup', icon: 'mdi-database-arrow-down-outline' },
+	},
 ];
 
 const router = createRouter({

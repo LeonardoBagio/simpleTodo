@@ -62,4 +62,18 @@ export default {
 			return http.delete(`/categories/${id}`).then((r) => r.data);
 		},
 	},
+	backups: {
+		status() {
+			return http.get('/backups').then((r) => r.data);
+		},
+		configure() {
+			return http.post('/backups/configure').then((r) => r.data);
+		},
+		create() {
+			return http.post('/backups').then((r) => r.data);
+		},
+		restore(name) {
+			return http.post('/backups/restore', { name }).then((r) => r.data);
+		},
+	},
 };

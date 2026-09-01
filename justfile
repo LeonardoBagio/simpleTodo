@@ -55,3 +55,43 @@ status:
 test:
     @printf "{{ _blue }}🧪  Rodando os testes unitários do backend...{{ _reset }}\n"
     cd backend && npm test
+
+# Backups usam a API do backend (mesma engine da tela Backup).
+# Requer o backend no ar (just start / just create).
+_api := 'http://localhost:' + env_var_or_default('NODE_PORT', '3000') + '/api/backups'
+
+# 🔑  Configura a criptografia de backup (gera a chave). Rode uma vez.
+backup-init:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    printf "{{ _blue }}🔑  Configurando criptografia de backup...{{ _reset }}\n"
+    curl -fsS -X POST {{ _api }}/configure > /dev/null
+    printf "{{ _green }}✅  Backup configurado (chave em backups/.key, fora do git).{{ _reset }}\n"
+    printf "{{ _yellow }}⚠️   GUARDE backups/.key EM LUGAR SEGURO. Sem essa chave é{{ _reset }}\n"
+    printf "{{ _yellow }}    impossível restaurar os backups.{{ _reset }}\n"
+
+# 💾  Gera um backup criptografado (AES-256) do MongoDB em backups/
+backup:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    printf "{{ _blue }}💾  Gerando backup criptografado...{{ _reset }}\n"
+    name=$(curl -fsS -X POST {{ _api }} | grep -o '"name":"[^"]*"' | cut -d'"' -f4)
+    printf "{{ _green }}✅  Backup salvo: backups/%s{{ _reset }}\n" "$name"
+
+# 📋  Lista os backups disponíveis
+backups:
+    @curl -fsS {{ _api }}
+
+# ♻️  Restaura um backup (uso: just restore simpletodo-AAAAMMDD-HHMMSS.stbackup)
+restore name:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    printf "{{ _yellow }}⚠️   Isto vai SUBSTITUIR os dados atuais do banco pelos do backup.{{ _reset }}\n"
+    read -p "Confirma a restauração de {{ name }}? [s/N] " ans
+    case "$ans" in
+        s|S|sim|Sim) ;;
+        *) printf "{{ _blue }}Cancelado.{{ _reset }}\n"; exit 0 ;;
+    esac
+    printf "{{ _blue }}♻️   Restaurando...{{ _reset }}\n"
+    curl -fsS -X POST {{ _api }}/restore -H 'Content-Type: application/json' -d '{"name":"{{ name }}"}' > /dev/null
+    printf "{{ _green }}✅  Restauração concluída.{{ _reset }}\n"

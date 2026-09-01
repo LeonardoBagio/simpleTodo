@@ -13,9 +13,11 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 const todoRoutes = require('./routes/todoRoutes');
 const statusRoutes = require('./routes/statusRoutes');
 const categoryRoutes = require('./routes/categoryRoutes');
+const backupRoutes = require('./routes/backupRoutes');
 app.use('/api/todos', todoRoutes);
 app.use('/api/statuses', statusRoutes);
 app.use('/api/categories', categoryRoutes);
+app.use('/api/backups', backupRoutes);
 
 app.use(notFound);
 app.use(errorHandler);

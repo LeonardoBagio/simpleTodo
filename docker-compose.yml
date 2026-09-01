@@ -11,6 +11,7 @@ services:
     volumes:
       - ./backend:/usr/src/app
       - /usr/src/app/node_modules
+      - ./backups:/usr/src/app/backups
     environment:
       - NODE_ENV=${NODE_ENV:-development}
       - NODE_PORT=${NODE_PORT:-3000}

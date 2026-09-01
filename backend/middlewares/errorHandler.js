@@ -20,6 +20,12 @@ const errorHandler = (err, req, res, next) => {
 			.json({ message: err.message });
 	}
 
+	if (err.name === 'BackupError') {
+		return res
+			.status(err.status || StatusCodes.INTERNAL_SERVER_ERROR)
+			.json({ message: err.message });
+	}
+
 	console.error(err);
 	res
 		.status(StatusCodes.INTERNAL_SERVER_ERROR)

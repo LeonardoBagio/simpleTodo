@@ -9,6 +9,7 @@ const nav = [
 	{ to: '/dashboard', label: 'Dashboard', icon: 'mdi-chart-box-outline' },
 	{ to: '/categorias', label: 'Categoria', icon: 'mdi-tag-multiple-outline' },
 	{ to: '/status', label: 'Status', icon: 'mdi-format-list-bulleted-type' },
+	{ to: '/backup', label: 'Backup', icon: 'mdi-database-arrow-down-outline' },
 ];
 
 const catalog = useCatalog();
