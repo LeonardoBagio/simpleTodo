@@ -131,3 +131,6 @@ dist
 
 # Backups do banco e chave de criptografia (nunca versionar)
 backups/
+
+# Configuração do rclone — contém o token OAuth do Google Drive
+rclone-config/

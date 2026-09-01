@@ -60,6 +60,9 @@ test:
 # Requer o backend no ar (just start / just create).
 _api := 'http://localhost:' + env_var_or_default('NODE_PORT', '3000') + '/api/backups'
 
+# Destino na nuvem (rclone). Ajuste o remote/pasta se quiser.
+_rclone_remote := 'gdrive:simpletodo-backups'
+
 # 🔑  Configura a criptografia de backup (gera a chave). Rode uma vez.
 backup-init:
     #!/usr/bin/env bash
@@ -95,3 +98,21 @@ restore name:
     printf "{{ _blue }}♻️   Restaurando...{{ _reset }}\n"
     curl -fsS -X POST {{ _api }}/restore -H 'Content-Type: application/json' -d '{"name":"{{ name }}"}' > /dev/null
     printf "{{ _green }}✅  Restauração concluída.{{ _reset }}\n"
+
+# 🔑  Autentica o rclone no Google Drive (uma vez; abre o navegador)
+backup-remote-init:
+    @printf "{{ _blue }}🔑  Configurando o rclone (siga o assistente; escolha auto config = y)...{{ _reset }}\n"
+    docker run --rm -it --network host -v "$PWD/rclone-config:/config/rclone" rclone/rclone config
+    @printf "{{ _green }}✅  Se criou o remote 'gdrive', já pode usar: just backup-push{{ _reset }}\n"
+
+# ☁️  Envia os backups (.stbackup) para a nuvem via rclone
+backup-push:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    if [ ! -f rclone-config/rclone.conf ]; then
+        printf "{{ _yellow }}⚠️   rclone não configurado. Rode antes: just backup-remote-init{{ _reset }}\n"
+        exit 1
+    fi
+    printf "{{ _blue }}☁️   Enviando backups para {{ _rclone_remote }}...{{ _reset }}\n"
+    docker compose run --rm rclone copy /data {{ _rclone_remote }} --include "*.stbackup" --progress
+    printf "{{ _green }}✅  Envio concluído.{{ _reset }}\n"

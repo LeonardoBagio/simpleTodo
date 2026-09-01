@@ -65,5 +65,19 @@ services:
     #  timeout: 10s
     #  retries: 10
 
+  # ==========================================
+  # 4. rclone (envio dos backups para a nuvem)
+  # Ferramenta sob demanda — não sobe no 'up'.
+  # Uso: docker compose run --rm rclone <args>
+  # ==========================================
+  rclone:
+    image: rclone/rclone:latest
+    profiles: ["tools"]
+    environment:
+      - TZ=${TZ:-America/Sao_Paulo}
+    volumes:
+      - ./rclone-config:/config/rclone   # rclone.conf (token OAuth)
+      - ./backups:/data:ro               # dumps .stbackup (somente leitura)
+
 volumes:
   mongo_data:
