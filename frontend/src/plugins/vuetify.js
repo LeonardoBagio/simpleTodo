@@ -12,28 +12,28 @@ const lamps = {
 const portfolio = {
 	dark: false,
 	colors: {
-		background: '#e5e5e5',
+		background: '#efecf8',
 		surface: '#ffffff',
 		'surface-bright': '#ffffff',
-		primary: '#1a1a1a',
-		'primary-darken-1': '#000000',
+		primary: '#6c4bf2',
+		'primary-darken-1': '#5a37e6',
 		...lamps,
-		'on-surface': '#1a1a1a',
-		'on-background': '#1a1a1a',
+		'on-surface': '#1c1830',
+		'on-background': '#1c1830',
 	},
 };
 
 const portfolioDark = {
 	dark: true,
 	colors: {
-		background: '#131417',
-		surface: '#1d1f23',
-		'surface-bright': '#26282d',
-		primary: '#ececed',
-		'primary-darken-1': '#ffffff',
+		background: '#100c1e',
+		surface: '#1a1633',
+		'surface-bright': '#241f42',
+		primary: '#7c5cfc',
+		'primary-darken-1': '#9179ff',
 		...lamps,
-		'on-surface': '#ececed',
-		'on-background': '#ececed',
+		'on-surface': '#f3f1fb',
+		'on-background': '#f3f1fb',
 	},
 };
 
