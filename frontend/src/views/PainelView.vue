@@ -241,7 +241,7 @@ onMounted(load);
 		</v-expand-transition>
 
 		<div v-if="loading && !loaded" class="grid">
-			<div v-for="n in 6" :key="n" class="skeleton" />
+			<div v-for="n in 6" :key="n" class="skeleton shimmer" />
 		</div>
 
 		<div v-else-if="groups.length === 0" class="empty card">
@@ -409,18 +409,6 @@ onMounted(load);
 	height: 150px;
 	border-radius: var(--radius-md);
 	border: 1px solid var(--border-subtle);
-	background: linear-gradient(90deg, rgba(0, 0, 0, 0.03), rgba(0, 0, 0, 0.06) 50%, rgba(0, 0, 0, 0.03));
-	background-size: 200% 100%;
-	animation: shimmer 1.3s ease-in-out infinite;
-}
-
-@keyframes shimmer {
-	0% {
-		background-position: 200% 0;
-	}
-	100% {
-		background-position: -200% 0;
-	}
 }
 
 .empty {
@@ -441,11 +429,5 @@ onMounted(load);
 	color: var(--text-muted-on-light);
 	font-size: var(--fs-sm);
 	margin: 0;
-}
-
-@media (prefers-reduced-motion: reduce) {
-	.skeleton {
-		animation: none;
-	}
 }
 </style>

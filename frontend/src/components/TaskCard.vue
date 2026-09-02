@@ -112,34 +112,6 @@ function onCategory(id) {
 	gap: 4px;
 }
 
-.icon-btn {
-	width: 32px;
-	height: 32px;
-	border-radius: var(--radius-sm);
-	border: 0;
-	background: transparent;
-	color: var(--text-muted-on-light);
-	cursor: pointer;
-	display: grid;
-	place-items: center;
-	transition: background 0.16s, color 0.16s;
-}
-
-.icon-btn:hover:not(:disabled) {
-	background: var(--bg-light);
-	color: var(--color-ink);
-}
-
-.icon-btn.danger:hover:not(:disabled) {
-	background: color-mix(in srgb, var(--lamp-trash) 12%, transparent);
-	color: var(--lamp-trash);
-}
-
-.icon-btn:disabled {
-	opacity: 0.4;
-	cursor: not-allowed;
-}
-
 .confirm {
 	display: flex;
 	align-items: center;

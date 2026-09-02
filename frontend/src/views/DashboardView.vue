@@ -6,11 +6,13 @@ import { useCatalog } from '../stores/catalog';
 import { useFilters } from '../stores/filters';
 import { GROUP_ORDER, GROUP_LABEL } from '../utils/states';
 import CategorySelect from '../components/CategorySelect.vue';
+import { useTheme } from '../composables/useTheme';
 
 Chart.register(...registerables);
 
 const catalog = useCatalog();
 const { state: filters } = useFilters();
+const { resolved: theme } = useTheme();
 const todos = ref([]);
 const loading = ref(true);
 const error = ref('');
@@ -22,13 +24,20 @@ const PERIODS = [
 	{ value: 1, label: '1D' },
 ];
 
-const GROUP_COLOR = {
-	a_fazer: '#9b9a97',
-	em_andamento: '#337ea9',
-	concluidos: '#448361',
-};
-const NONE_COLOR = '#7a8593';
 const FONT = "'Montserrat', system-ui, sans-serif";
+
+function cssVar(name) {
+	return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+}
+
+function groupColors() {
+	return {
+		a_fazer: cssVar('--lamp-draft'),
+		em_andamento: cssVar('--lamp-doing'),
+		concluidos: cssVar('--lamp-done'),
+		none: cssVar('--color-mist'),
+	};
+}
 
 const scoped = computed(() => {
 	let list = todos.value;
@@ -59,7 +68,7 @@ let statusChart = null;
 function countByCategory(list) {
 	const cats = catalog.state.categories;
 	const labels = [...cats.map((c) => c.label), 'Sem categoria'];
-	const colors = [...cats.map((c) => c.color), NONE_COLOR];
+	const colors = [...cats.map((c) => c.color), groupColors().none];
 	const data = [
 		...cats.map((c) => list.filter((t) => t.category?._id === c._id).length),
 		list.filter((t) => !t.category).length,
@@ -84,14 +93,17 @@ function baseOptions(extra = {}) {
 
 function axisFont() {
 	return {
-		ticks: { font: { family: FONT }, color: '#5c5c5c', precision: 0 },
-		grid: { color: 'rgba(0,0,0,0.06)' },
+		ticks: { font: { family: FONT }, color: cssVar('--text-muted-on-light'), precision: 0 },
+		grid: { color: cssVar('--chart-grid') },
 	};
 }
 
 function renderCharts() {
 	destroyCharts();
 	if (!catCanvas.value) return;
+
+	const groups = groupColors();
+	const legendColor = cssVar('--text-muted-on-light');
 
 	const entregas = scoped.value.filter((t) => t.status?.group === 'concluidos');
 	const byCat = countByCategory(entregas);
@@ -107,21 +119,21 @@ function renderCharts() {
 	});
 
 	const groupLabels = [...GROUP_ORDER.map((g) => GROUP_LABEL[g]), 'Sem Andamento'];
-	const groupColors = [...GROUP_ORDER.map((g) => GROUP_COLOR[g]), NONE_COLOR];
+	const groupPalette = [...GROUP_ORDER.map((g) => groups[g]), groups.none];
 	const groupData = [
 		...GROUP_ORDER.map((g) => scoped.value.filter((t) => t.status?.group === g).length),
 		scoped.value.filter((t) => !t.status).length,
 	];
 	groupChart = new Chart(groupCanvas.value, {
 		type: 'doughnut',
-		data: { labels: groupLabels, datasets: [{ data: groupData, backgroundColor: groupColors, borderWidth: 0 }] },
+		data: { labels: groupLabels, datasets: [{ data: groupData, backgroundColor: groupPalette, borderWidth: 0 }] },
 		options: baseOptions({
 			cutout: '62%',
 			plugins: {
 				legend: {
 					display: true,
 					position: 'bottom',
-					labels: { font: { family: FONT, size: 11 }, color: '#5c5c5c', boxWidth: 12, padding: 12 },
+					labels: { font: { family: FONT, size: 11 }, color: legendColor, boxWidth: 12, padding: 12 },
 				},
 			},
 		}),
@@ -169,9 +181,12 @@ async function load() {
 	}
 }
 
-watch([() => filters.category, () => filters.period, () => catalog.state.statuses.length], () => {
-	if (!loading.value) nextTick(renderCharts);
-});
+watch(
+	[() => filters.category, () => filters.period, () => catalog.state.statuses.length, theme],
+	() => {
+		if (!loading.value) nextTick(renderCharts);
+	},
+);
 
 onMounted(load);
 onBeforeUnmount(destroyCharts);
@@ -288,11 +303,6 @@ onBeforeUnmount(destroyCharts);
 	flex-direction: column;
 	gap: 6px;
 	align-items: flex-start;
-}
-
-.flabel {
-	font-size: 9px;
-	color: var(--text-muted-on-light);
 }
 
 .stats {

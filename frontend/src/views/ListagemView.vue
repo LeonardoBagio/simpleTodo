@@ -191,7 +191,7 @@ onMounted(load);
 		</v-expand-transition>
 
 		<div v-if="loading && !loaded" class="skeleton-wrap card">
-			<div v-for="n in 6" :key="n" class="skeleton-row" />
+			<div v-for="n in 6" :key="n" class="skeleton-row shimmer" />
 		</div>
 
 		<div v-else-if="groups.length === 0" class="empty card">
@@ -361,11 +361,6 @@ onMounted(load);
 	flex-direction: column;
 	gap: 6px;
 	align-items: flex-start;
-}
-
-.flabel {
-	font-size: 9px;
-	color: var(--text-muted-on-light);
 }
 
 .groups {
@@ -595,8 +590,8 @@ onMounted(load);
 }
 
 .load-more:hover {
-	background: var(--color-ink);
-	color: #fff;
+	background: var(--primary-accent);
+	color: var(--text-on-accent);
 }
 
 .sr-only {
@@ -621,18 +616,6 @@ onMounted(load);
 .skeleton-row {
 	height: 44px;
 	border-radius: var(--radius-sm);
-	background: linear-gradient(90deg, rgba(0, 0, 0, 0.03), rgba(0, 0, 0, 0.06) 50%, rgba(0, 0, 0, 0.03));
-	background-size: 200% 100%;
-	animation: shimmer 1.3s ease-in-out infinite;
-}
-
-@keyframes shimmer {
-	0% {
-		background-position: 200% 0;
-	}
-	100% {
-		background-position: -200% 0;
-	}
 }
 
 .empty {
@@ -653,11 +636,5 @@ onMounted(load);
 	color: var(--text-muted-on-light);
 	font-size: var(--fs-sm);
 	margin: 0;
-}
-
-@media (prefers-reduced-motion: reduce) {
-	.skeleton-row {
-		animation: none;
-	}
 }
 </style>
