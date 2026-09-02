@@ -1,7 +1,9 @@
 <script setup>
-import { onMounted } from 'vue';
+import { onMounted, watchEffect } from 'vue';
+import { useTheme as useVuetifyTheme } from 'vuetify';
 import Wordmark from './components/Wordmark.vue';
 import { useCatalog } from './stores/catalog';
+import { useTheme } from './composables/useTheme';
 
 const nav = [
 	{ to: '/painel', label: 'Painel', icon: 'mdi-view-dashboard-outline' },
@@ -13,6 +15,15 @@ const nav = [
 ];
 
 const catalog = useCatalog();
+const { resolved, toggle, apply } = useTheme();
+const vuetifyTheme = useVuetifyTheme();
+
+apply();
+watchEffect(() => {
+	vuetifyTheme.global.name.value =
+		resolved.value === 'dark' ? 'portfolioDark' : 'portfolio';
+});
+
 onMounted(() => catalog.fetchAll());
 </script>
 
@@ -38,6 +49,20 @@ onMounted(() => catalog.fetchAll());
 							<span>{{ item.label }}</span>
 						</RouterLink>
 					</nav>
+
+					<button
+						class="theme-toggle"
+						type="button"
+						:aria-label="resolved === 'dark' ? 'Ativar tema claro' : 'Ativar tema escuro'"
+						:title="resolved === 'dark' ? 'Tema claro' : 'Tema escuro'"
+						@click="toggle"
+					>
+						<v-icon
+							:icon="resolved === 'dark' ? 'mdi-weather-sunny' : 'mdi-weather-night'"
+							size="18"
+						/>
+						<span>{{ resolved === 'dark' ? 'Tema claro' : 'Tema escuro' }}</span>
+					</button>
 				</aside>
 
 				<main class="content">
@@ -62,8 +87,8 @@ onMounted(() => catalog.fetchAll());
 	height: 100vh;
 	width: 250px;
 	flex: none;
-	background: rgba(0, 0, 0, 0.94);
-	border-right: 1px solid rgba(255, 255, 255, 0.1);
+	background: var(--sidebar-bg);
+	border-right: 1px solid var(--sidebar-border);
 	display: flex;
 	flex-direction: column;
 	gap: 8px;
@@ -72,7 +97,7 @@ onMounted(() => catalog.fetchAll());
 
 .brand {
 	padding: 4px 8px 20px;
-	border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+	border-bottom: 1px solid var(--sidebar-divider);
 	margin-bottom: 12px;
 }
 
@@ -93,19 +118,49 @@ onMounted(() => catalog.fetchAll());
 	font-size: var(--fs-xs);
 	letter-spacing: 0.08em;
 	text-transform: uppercase;
-	color: rgba(255, 255, 255, 0.6);
+	color: var(--sidebar-fg);
 	text-decoration: none;
-	transition: background 0.18s var(--ease), color 0.18s var(--ease);
+	transition:
+		background 0.18s var(--ease),
+		color 0.18s var(--ease);
 }
 
 .menu-item:hover {
-	background: rgba(255, 255, 255, 0.06);
-	color: rgba(255, 255, 255, 0.92);
+	background: var(--sidebar-hover);
+	color: var(--sidebar-fg-strong);
 }
 
 .menu-item.is-active {
-	background: var(--color-white);
-	color: var(--color-ink);
+	background: var(--sidebar-active-bg);
+	color: var(--sidebar-active-fg);
+}
+
+.theme-toggle {
+	margin-top: auto;
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	padding: 0.7rem 0.85rem;
+	border: 1px solid var(--sidebar-border);
+	border-radius: var(--radius-sm);
+	background: transparent;
+	color: var(--sidebar-fg);
+	font-family: var(--font-head);
+	font-weight: 700;
+	font-size: var(--fs-xs);
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+	cursor: pointer;
+	transition:
+		background 0.18s var(--ease),
+		color 0.18s var(--ease),
+		border-color 0.18s var(--ease);
+}
+
+.theme-toggle:hover {
+	background: var(--sidebar-hover);
+	color: var(--sidebar-fg-strong);
+	border-color: var(--sidebar-fg);
 }
 
 .content {
@@ -134,7 +189,7 @@ onMounted(() => catalog.fetchAll());
 	.brand {
 		padding: 0 8px 0 0;
 		border-bottom: 0;
-		border-right: 1px solid rgba(255, 255, 255, 0.08);
+		border-right: 1px solid var(--sidebar-divider);
 		margin-bottom: 0;
 		flex: none;
 	}
@@ -147,6 +202,19 @@ onMounted(() => catalog.fetchAll());
 	}
 	.menu-item {
 		padding: 0.6rem 0.75rem;
+	}
+	.theme-toggle {
+		margin-top: 0;
+		margin-left: 8px;
+		flex: none;
+		padding: 0.55rem 0.7rem;
+		position: sticky;
+		right: 8px;
+		z-index: 1;
+		background: var(--sidebar-bg);
+	}
+	.theme-toggle span {
+		display: none;
 	}
 	.content {
 		padding: 28px 16px 48px;

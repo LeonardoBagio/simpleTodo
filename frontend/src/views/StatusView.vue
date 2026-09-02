@@ -7,7 +7,7 @@ import StatusBadge from '../components/StatusBadge.vue';
 const catalog = useCatalog();
 
 const label = ref('');
-const color = ref('#337ea9');
+const color = ref('#4a9fd4');
 const group = ref('a_fazer');
 const editingId = ref(null);
 const saving = ref(false);
@@ -26,7 +26,7 @@ const grouped = computed(() =>
 
 function reset() {
 	label.value = '';
-	color.value = '#337ea9';
+	color.value = '#4a9fd4';
 	group.value = 'a_fazer';
 	editingId.value = null;
 }
@@ -194,22 +194,6 @@ onMounted(() => catalog.fetchAll());
 	flex-wrap: wrap;
 }
 
-.field-group {
-	display: flex;
-	flex-direction: column;
-	gap: 6px;
-}
-
-.field-group.grow {
-	flex: 1;
-	min-width: 200px;
-}
-
-.flabel {
-	font-size: 9px;
-	color: var(--text-muted-on-light);
-}
-
 .color-input {
 	display: flex;
 	align-items: center;
@@ -283,61 +267,8 @@ onMounted(() => catalog.fetchAll());
 	gap: 4px;
 }
 
-.icon-btn {
-	width: 34px;
-	height: 34px;
-	border-radius: var(--radius-sm);
-	border: 0;
-	background: transparent;
-	color: var(--text-muted-on-light);
-	cursor: pointer;
-	display: grid;
-	place-items: center;
-	transition: background 0.16s, color 0.16s;
-}
-
-.icon-btn:hover {
-	background: var(--bg-light);
-	color: var(--color-ink);
-}
-
-.icon-btn.danger:hover {
-	background: color-mix(in srgb, var(--lamp-trash) 12%, transparent);
-	color: var(--lamp-trash);
-}
-
 .empty {
 	padding: 14px;
 	text-align: center;
-}
-
-.banner {
-	display: flex;
-	align-items: center;
-	gap: 10px;
-	background: color-mix(in srgb, var(--lamp-trash) 10%, var(--surface));
-	color: var(--lamp-trash);
-	border: 1px solid color-mix(in srgb, var(--lamp-trash) 30%, transparent);
-	border-radius: var(--radius-sm);
-	padding: 11px 12px 11px 14px;
-	font-size: var(--fs-sm);
-	font-weight: 600;
-}
-
-.banner span {
-	flex: 1;
-}
-
-.banner-close {
-	flex: none;
-	border: 0;
-	background: transparent;
-	color: inherit;
-	cursor: pointer;
-	display: grid;
-	place-items: center;
-	border-radius: 7px;
-	width: 26px;
-	height: 26px;
 }
 </style>

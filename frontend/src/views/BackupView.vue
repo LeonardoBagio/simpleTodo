@@ -618,11 +618,6 @@ code {
 	border-radius: 6px;
 }
 
-.flabel {
-	font-size: 9px;
-	color: var(--text-muted-on-light);
-}
-
 .status-card {
 	padding: 20px;
 	display: flex;
@@ -650,8 +645,8 @@ code {
 }
 
 .chip-ok {
-	background: color-mix(in srgb, #2f9e44 12%, transparent);
-	color: #2f9e44;
+	background: color-mix(in srgb, var(--lamp-done) 14%, transparent);
+	color: color-mix(in srgb, var(--lamp-done) 72%, var(--text-dark));
 }
 
 .chip-off {
@@ -756,17 +751,6 @@ code {
 	flex-wrap: wrap;
 }
 
-.field-group {
-	display: flex;
-	flex-direction: column;
-	gap: 6px;
-}
-
-.field-group.grow {
-	flex: 1;
-	min-width: 160px;
-}
-
 .sched-foot {
 	display: flex;
 	align-items: flex-end;
@@ -804,32 +788,13 @@ code {
 }
 
 .run-badge.ok {
-	background: color-mix(in srgb, #2f9e44 14%, transparent);
-	color: #2f9e44;
+	background: color-mix(in srgb, var(--lamp-done) 16%, transparent);
+	color: color-mix(in srgb, var(--lamp-done) 72%, var(--text-dark));
 }
 
 .run-badge.err {
 	background: color-mix(in srgb, var(--lamp-trash) 14%, transparent);
 	color: var(--lamp-trash);
-}
-
-.icon-btn {
-	width: 34px;
-	height: 34px;
-	flex: none;
-	border-radius: var(--radius-sm);
-	border: 0;
-	background: transparent;
-	color: var(--text-muted-on-light);
-	cursor: pointer;
-	display: grid;
-	place-items: center;
-	transition: background 0.16s, color 0.16s;
-}
-
-.icon-btn:hover {
-	background: var(--surface);
-	color: var(--color-ink);
 }
 
 .dialog {
@@ -990,44 +955,5 @@ code {
 .empty {
 	padding: 14px;
 	text-align: center;
-}
-
-.banner {
-	display: flex;
-	align-items: center;
-	gap: 10px;
-	border-radius: var(--radius-sm);
-	padding: 11px 12px 11px 14px;
-	font-size: var(--fs-sm);
-	font-weight: 600;
-}
-
-.banner span {
-	flex: 1;
-}
-
-.banner-error {
-	background: color-mix(in srgb, var(--lamp-trash) 10%, var(--surface));
-	color: var(--lamp-trash);
-	border: 1px solid color-mix(in srgb, var(--lamp-trash) 30%, transparent);
-}
-
-.banner-ok {
-	background: color-mix(in srgb, #2f9e44 10%, var(--surface));
-	color: #2f9e44;
-	border: 1px solid color-mix(in srgb, #2f9e44 30%, transparent);
-}
-
-.banner-close {
-	flex: none;
-	border: 0;
-	background: transparent;
-	color: inherit;
-	cursor: pointer;
-	display: grid;
-	place-items: center;
-	border-radius: 7px;
-	width: 26px;
-	height: 26px;
 }
 </style>

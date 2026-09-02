@@ -5,7 +5,7 @@ import { useCatalog } from '../stores/catalog';
 const catalog = useCatalog();
 
 const label = ref('');
-const color = ref('#337ea9');
+const color = ref('#4a9fd4');
 const editingId = ref(null);
 const saving = ref(false);
 const error = ref('');
@@ -16,7 +16,7 @@ const canSave = computed(() => label.value.trim().length > 0 && !saving.value);
 
 function reset() {
 	label.value = '';
-	color.value = '#337ea9';
+	color.value = '#4a9fd4';
 	editingId.value = null;
 }
 
@@ -153,22 +153,6 @@ onMounted(() => catalog.fetchAll());
 	flex-wrap: wrap;
 }
 
-.field-group {
-	display: flex;
-	flex-direction: column;
-	gap: 6px;
-}
-
-.field-group.grow {
-	flex: 1;
-	min-width: 200px;
-}
-
-.flabel {
-	font-size: 9px;
-	color: var(--text-muted-on-light);
-}
-
 .color-input {
 	display: flex;
 	align-items: center;
@@ -194,17 +178,6 @@ onMounted(() => catalog.fetchAll());
 	display: flex;
 	align-items: center;
 	gap: 12px;
-}
-
-.cat-pill {
-	display: inline-flex;
-	align-items: center;
-	border-radius: var(--radius-pill);
-	padding: 0.3rem 0.8rem;
-	font-family: var(--font-head);
-	font-weight: 700;
-	font-size: var(--fs-xs);
-	color: #fff;
 }
 
 .form-actions {
@@ -239,29 +212,6 @@ onMounted(() => catalog.fetchAll());
 	margin-left: auto;
 	display: flex;
 	gap: 4px;
-}
-
-.icon-btn {
-	width: 34px;
-	height: 34px;
-	border-radius: var(--radius-sm);
-	border: 0;
-	background: transparent;
-	color: var(--text-muted-on-light);
-	cursor: pointer;
-	display: grid;
-	place-items: center;
-	transition: background 0.16s, color 0.16s;
-}
-
-.icon-btn:hover {
-	background: var(--bg-light);
-	color: var(--color-ink);
-}
-
-.icon-btn.danger:hover {
-	background: color-mix(in srgb, var(--lamp-trash) 12%, transparent);
-	color: var(--lamp-trash);
 }
 
 .empty {

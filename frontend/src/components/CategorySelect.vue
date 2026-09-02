@@ -1,6 +1,7 @@
 <script setup>
-import { ref, computed, nextTick, onMounted, onBeforeUnmount } from 'vue';
+import { computed } from 'vue';
 import { useCatalog } from '../stores/catalog';
+import { usePopover } from '../composables/usePopover';
 
 const props = defineProps({
 	modelValue: { type: [String, null], default: null },
@@ -9,51 +10,16 @@ const props = defineProps({
 const emit = defineEmits(['update:modelValue']);
 
 const catalog = useCatalog();
-const open = ref(false);
-const triggerEl = ref(null);
-const panelStyle = ref({});
-const PANEL_W = 224;
+const { open, triggerEl, panelStyle, toggle, close } = usePopover(224);
 
 const current = computed(() =>
 	props.modelValue != null ? catalog.categoryById.value[props.modelValue] : undefined,
 );
 
-function place() {
-	const el = triggerEl.value;
-	if (!el) return;
-	const r = el.getBoundingClientRect();
-	let left = r.left;
-	if (left + PANEL_W > window.innerWidth - 8) left = window.innerWidth - PANEL_W - 8;
-	if (left < 8) left = 8;
-	const below = window.innerHeight - r.bottom;
-	const openUp = below < 280 && r.top > below;
-	panelStyle.value = openUp
-		? { left: `${left}px`, bottom: `${window.innerHeight - r.top + 6}px`, width: `${PANEL_W}px` }
-		: { left: `${left}px`, top: `${r.bottom + 6}px`, width: `${PANEL_W}px` };
-}
-
-function toggle() {
-	open.value = !open.value;
-	if (open.value) nextTick(place);
-}
-
 function pick(id) {
 	emit('update:modelValue', id);
-	open.value = false;
+	close();
 }
-
-function onReflow() {
-	if (open.value) place();
-}
-
-onMounted(() => {
-	window.addEventListener('scroll', onReflow, true);
-	window.addEventListener('resize', onReflow);
-});
-onBeforeUnmount(() => {
-	window.removeEventListener('scroll', onReflow, true);
-	window.removeEventListener('resize', onReflow);
-});
 </script>
 
 <template>
@@ -122,7 +88,7 @@ onBeforeUnmount(() => {
 }
 
 .trigger:not(.colored):hover {
-	border-color: rgba(0, 0, 0, 0.28);
+	border-color: rgba(var(--wash-rgb), 0.3);
 }
 
 .cat-dot,
@@ -134,6 +100,6 @@ onBeforeUnmount(() => {
 }
 
 .none-dot {
-	border: 1px solid rgba(0, 0, 0, 0.2);
+	border: 1px solid rgba(var(--wash-rgb), 0.28);
 }
 </style>
