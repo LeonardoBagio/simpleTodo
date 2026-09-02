@@ -111,8 +111,8 @@ onMounted(() => catalog.fetchAll());
 	display: flex;
 	align-items: center;
 	gap: 12px;
-	padding: 0.7rem 0.85rem;
-	border-radius: var(--radius-sm);
+	padding: 0.72rem 0.9rem;
+	border-radius: 12px;
 	font-family: var(--font-head);
 	font-weight: 700;
 	font-size: var(--fs-xs);
@@ -122,7 +122,8 @@ onMounted(() => catalog.fetchAll());
 	text-decoration: none;
 	transition:
 		background 0.18s var(--ease),
-		color 0.18s var(--ease);
+		color 0.18s var(--ease),
+		box-shadow 0.18s var(--ease);
 }
 
 .menu-item:hover {
@@ -133,6 +134,7 @@ onMounted(() => catalog.fetchAll());
 .menu-item.is-active {
 	background: var(--sidebar-active-bg);
 	color: var(--sidebar-active-fg);
+	box-shadow: var(--accent-glow);
 }
 
 .theme-toggle {
@@ -140,9 +142,9 @@ onMounted(() => catalog.fetchAll());
 	display: flex;
 	align-items: center;
 	gap: 12px;
-	padding: 0.7rem 0.85rem;
+	padding: 0.72rem 0.9rem;
 	border: 1px solid var(--sidebar-border);
-	border-radius: var(--radius-sm);
+	border-radius: 12px;
 	background: transparent;
 	color: var(--sidebar-fg);
 	font-family: var(--font-head);

@@ -232,7 +232,7 @@ onBeforeUnmount(destroyCharts);
 		</v-expand-transition>
 
 		<div class="stats">
-			<div class="stat card">
+			<div class="stat card gradient-surface">
 				<span class="stat-num num">{{ total }}</span>
 				<span class="stat-label eyebrow">Tarefas</span>
 			</div>
@@ -244,7 +244,7 @@ onBeforeUnmount(destroyCharts);
 				<span class="stat-num num">{{ entregues }}</span>
 				<span class="stat-label eyebrow">Entregues</span>
 			</div>
-			<div class="stat card">
+			<div class="stat card gradient-surface">
 				<span class="stat-num num">{{ taxa }}%</span>
 				<span class="stat-label eyebrow">Conclusão</span>
 			</div>
