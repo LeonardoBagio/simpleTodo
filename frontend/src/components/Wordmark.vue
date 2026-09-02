@@ -8,10 +8,12 @@ defineProps({
 <template>
 	<span class="wordmark" :class="[tone, { compact }]">
 		<span class="mark" aria-hidden="true">
-			<svg :width="compact ? 18 : 22" :height="compact ? 18 : 22" viewBox="0 0 24 24" fill="none">
-				<path d="M4 16a8 8 0 0116 0" :stroke="tone === 'dark' ? '#1a1a1a' : '#ffffff'" stroke-opacity="0.5" stroke-width="1.6" stroke-linecap="round" />
-				<path d="M12 16l5-4.2" :stroke="tone === 'dark' ? '#1a1a1a' : '#ffffff'" stroke-width="1.8" stroke-linecap="round" />
-				<circle cx="12" cy="16" r="1.7" :fill="tone === 'dark' ? '#1a1a1a' : '#ffffff'" />
+			<svg :width="compact ? 18 : 22" :height="compact ? 18 : 22" viewBox="0 0 48 48" fill="none">
+				<rect x="16" y="9" width="21" height="25" rx="3.5" :fill="tone === 'dark' ? '#1a1a1a' : '#ffffff'" />
+				<rect x="20" y="15" width="13" height="2.4" rx="1.2" fill="#9aa0a6" />
+				<rect x="20" y="20" width="13" height="2.4" rx="1.2" fill="#9aa0a6" />
+				<rect x="20" y="25" width="9" height="2.4" rx="1.2" fill="#9aa0a6" />
+				<path d="M11 27h10a3.5 3.5 0 013.5 3.5V36A3.5 3.5 0 0121 39.5h-6L11 43v-3.5A3.5 3.5 0 017.5 36v-5.5A3.5 3.5 0 0111 27z" :fill="tone === 'dark' ? '#1a1a1a' : '#ffffff'" fill-opacity="0.62" :stroke="tone === 'dark' ? '#ffffff' : '#1a1a1a'" stroke-width="2.2" />
 			</svg>
 		</span>
 		<span class="text">

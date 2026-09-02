@@ -2,11 +2,29 @@
 import { ref, reactive, computed, watch, onMounted, nextTick } from 'vue';
 import api from '../services/api';
 import { useCatalog } from '../stores/catalog';
+import { fmtDate } from '../utils/states';
 import TaskComposer from '../components/TaskComposer.vue';
 import TaskCard from '../components/TaskCard.vue';
 import CategorySelect from '../components/CategorySelect.vue';
+import StateSelect from '../components/StateSelect.vue';
 
 const catalog = useCatalog();
+
+const VIEW_KEY = 'painel:view';
+const viewMode = ref('cards');
+try {
+	const saved = localStorage.getItem(VIEW_KEY);
+	if (saved === 'cards' || saved === 'rows') viewMode.value = saved;
+} catch (e) {
+	viewMode.value = 'cards';
+}
+watch(viewMode, (v) => {
+	try {
+		localStorage.setItem(VIEW_KEY, v);
+	} catch (e) {
+		return;
+	}
+});
 
 const todos = ref([]);
 const loading = ref(true);
@@ -173,7 +191,47 @@ function onCategory({ id, category }) {
 	setField(id, { category });
 }
 
+const editingCell = reactive({ id: null, field: null });
+const draft = ref('');
+
+function focusInput(el) {
+	if (el) {
+		el.focus();
+		el.select();
+	}
+}
+
+function isEditingCell(todo, field) {
+	return editingCell.id === todo._id && editingCell.field === field;
+}
+
+function startCellEdit(todo, field) {
+	editingCell.id = todo._id;
+	editingCell.field = field;
+	draft.value = field === 'issue' ? todo.issue || '' : todo.title || '';
+}
+
+function cancelCellEdit() {
+	editingCell.id = null;
+	editingCell.field = null;
+	draft.value = '';
+}
+
+function commitCellEdit(todo) {
+	if (editingCell.id !== todo._id) return;
+	const field = editingCell.field;
+	const value = draft.value.trim();
+	const original = field === 'issue' ? todo.issue || '' : todo.title || '';
+	cancelCellEdit();
+	if (field === 'title' && !value) return;
+	if (value === original) return;
+	setField(todo._id, { [field]: value });
+}
+
+const confirmId = ref(null);
+
 async function onRemove(todo) {
+	if (confirmId.value === todo._id) confirmId.value = null;
 	const index = todos.value.findIndex((t) => t._id === todo._id);
 	if (index === -1) return;
 	const [removed] = todos.value.splice(index, 1);
@@ -228,6 +286,28 @@ onMounted(load);
 				<input v-model="showDone" type="checkbox" :disabled="isSearching" />
 				<span>Ver concluídos</span>
 			</label>
+			<div class="segment view-switch" role="group" aria-label="Modo de exibição">
+				<button
+					type="button"
+					class="seg-btn"
+					:class="{ active: viewMode === 'cards' }"
+					:aria-pressed="viewMode === 'cards'"
+					title="Exibir em cartões"
+					@click="viewMode = 'cards'"
+				>
+					<v-icon icon="mdi-view-grid-outline" size="14" /> Cartões
+				</button>
+				<button
+					type="button"
+					class="seg-btn"
+					:class="{ active: viewMode === 'rows' }"
+					:aria-pressed="viewMode === 'rows'"
+					title="Exibir em linhas"
+					@click="viewMode = 'rows'"
+				>
+					<v-icon icon="mdi-format-list-bulleted" size="14" /> Linhas
+				</button>
+			</div>
 		</div>
 
 		<v-expand-transition>
@@ -261,18 +341,113 @@ onMounted(load);
 				</button>
 
 				<v-expand-transition>
-					<div v-show="!collapsed.has(g.key)" class="grid">
-						<TaskCard
-							v-for="(t, i) in g.items"
-							:key="t._id"
-							v-reveal="Math.min(i * 45, 260)"
-							:todo="t"
-							:busy="busyIds.has(t._id)"
-							@status="onStatus"
-							@category="onCategory"
-							@edit="startEdit"
-							@remove="onRemove"
-						/>
+					<div v-show="!collapsed.has(g.key)">
+						<div v-if="viewMode === 'cards'" class="grid">
+							<TaskCard
+								v-for="(t, i) in g.items"
+								:key="t._id"
+								v-reveal="Math.min(i * 45, 260)"
+								:todo="t"
+								:busy="busyIds.has(t._id)"
+								@status="onStatus"
+								@category="onCategory"
+								@edit="startEdit"
+								@remove="onRemove"
+							/>
+						</div>
+
+						<div v-else class="table-scroll card">
+							<table class="rows">
+								<caption class="sr-only">{{ g.label }}</caption>
+								<thead>
+									<tr>
+										<th class="col-when"><v-icon icon="mdi-clock-outline" size="14" /> Última edição</th>
+										<th class="col-issue"><v-icon icon="mdi-github" size="14" /> Issue</th>
+										<th class="col-task"><v-icon icon="mdi-format-list-checks" size="14" /> Tarefa</th>
+										<th class="col-cat"><v-icon icon="mdi-tag-outline" size="14" /> Categoria</th>
+										<th class="col-state"><v-icon icon="mdi-progress-check" size="14" /> Andamento</th>
+										<th class="col-actions"><span class="sr-only">Ações</span></th>
+									</tr>
+								</thead>
+								<tbody>
+									<tr v-for="t in g.items" :key="t._id" class="row" :class="{ busy: busyIds.has(t._id) }">
+										<td class="col-when">
+											<span class="when num">{{ fmtDate(t.updatedAt) }}</span>
+										</td>
+										<td class="col-issue">
+											<input
+												v-if="isEditingCell(t, 'issue')"
+												:ref="focusInput"
+												v-model="draft"
+												class="cell-input issue-input num"
+												type="text"
+												aria-label="Editar issue"
+												placeholder="—"
+												@keydown.enter.prevent="commitCellEdit(t)"
+												@keydown.esc.prevent="cancelCellEdit"
+												@blur="commitCellEdit(t)"
+											/>
+											<button v-else type="button" class="cell-edit issue-edit" title="Editar issue" @click="startCellEdit(t, 'issue')">
+												<span v-if="t.issue" class="issue num">#{{ t.issue }}</span>
+												<span v-else class="dash">—</span>
+											</button>
+										</td>
+										<td class="col-task">
+											<input
+												v-if="isEditingCell(t, 'title')"
+												:ref="focusInput"
+												v-model="draft"
+												class="cell-input"
+												type="text"
+												aria-label="Editar tarefa"
+												@keydown.enter.prevent="commitCellEdit(t)"
+												@keydown.esc.prevent="cancelCellEdit"
+												@blur="commitCellEdit(t)"
+											/>
+											<button v-else type="button" class="cell-edit task-edit" :title="t.title" @click="startCellEdit(t, 'title')">
+												<span class="task-title" :class="{ done: t.status?.group === 'concluidos' }">{{ t.title }}</span>
+											</button>
+										</td>
+										<td class="col-cat">
+											<CategorySelect
+												:model-value="t.category ? t.category._id : null"
+												all-label="Sem categoria"
+												@update:model-value="(id) => setField(t._id, { category: id })"
+											/>
+										</td>
+										<td class="col-state">
+											<StateSelect
+												:model-value="t.status ? t.status._id : null"
+												all-label="Sem Andamento"
+												placeholder="Sem Andamento"
+												@update:model-value="(id) => setField(t._id, { status: id })"
+											/>
+										</td>
+										<td class="col-actions">
+											<div v-if="confirmId !== t._id" class="row-actions">
+												<button
+													class="icon-btn danger"
+													type="button"
+													:disabled="busyIds.has(t._id)"
+													title="Excluir tarefa"
+													aria-label="Excluir tarefa"
+													@click="confirmId = t._id"
+												>
+													<v-icon icon="mdi-trash-can-outline" size="16" />
+												</button>
+											</div>
+											<div v-else class="confirm">
+												<span class="engraved q">Excluir?</span>
+												<div class="confirm-btns">
+													<button class="yes" type="button" :disabled="busyIds.has(t._id)" @click="onRemove(t)">Sim</button>
+													<button class="no" type="button" @click="confirmId = null">Não</button>
+												</div>
+											</div>
+										</td>
+									</tr>
+								</tbody>
+							</table>
+						</div>
 					</div>
 				</v-expand-transition>
 			</div>
@@ -403,6 +578,252 @@ onMounted(load);
 	grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
 	gap: var(--space-4);
 	align-items: start;
+}
+
+.view-switch {
+	margin-left: auto;
+}
+
+.view-switch .seg-btn {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+}
+
+.table-scroll {
+	overflow: auto;
+	max-height: 70vh;
+	overscroll-behavior: contain;
+}
+
+.rows {
+	width: 100%;
+	min-width: 780px;
+	table-layout: fixed;
+	border-collapse: collapse;
+	font-size: var(--fs-sm);
+}
+
+.rows thead th {
+	position: sticky;
+	top: 0;
+	z-index: 1;
+	background: var(--surface);
+	text-align: left;
+	white-space: nowrap;
+	padding: 12px 14px;
+	font-family: var(--font-head);
+	font-weight: 700;
+	font-size: 9px;
+	letter-spacing: 0.14em;
+	text-transform: uppercase;
+	color: var(--text-muted-on-light);
+	box-shadow: inset 0 -1px 0 var(--border-subtle);
+}
+
+.rows thead th .v-icon {
+	color: var(--color-mist);
+	margin-right: 4px;
+	vertical-align: -2px;
+}
+
+.rows tbody td {
+	padding: 12px 14px;
+	border-bottom: 1px solid var(--border-subtle);
+	vertical-align: middle;
+}
+
+.row:last-child td {
+	border-bottom: 0;
+}
+
+.row {
+	transition: background 0.14s var(--ease);
+}
+
+.row:hover td {
+	background: var(--bg-light);
+}
+
+.row.busy td {
+	opacity: 0.5;
+	pointer-events: none;
+}
+
+.col-when {
+	width: 150px;
+	white-space: nowrap;
+}
+
+.col-issue {
+	width: 84px;
+	white-space: nowrap;
+}
+
+.col-cat {
+	width: 150px;
+}
+
+.col-state {
+	width: 210px;
+}
+
+.col-actions {
+	width: 96px;
+}
+
+.col-task {
+	width: auto;
+}
+
+.when {
+	font-family: var(--font-head);
+	font-size: 11px;
+	font-weight: 600;
+	color: var(--text-muted-on-light);
+}
+
+.issue {
+	font-family: var(--font-head);
+	font-weight: 700;
+	font-size: 12px;
+	color: var(--color-ink);
+}
+
+.dash {
+	color: var(--color-mist);
+}
+
+.task-title {
+	font-family: var(--font-head);
+	font-weight: 700;
+	font-size: 14px;
+	letter-spacing: -0.01em;
+	color: var(--color-ink);
+	overflow-wrap: anywhere;
+	display: -webkit-box;
+	-webkit-line-clamp: 2;
+	line-clamp: 2;
+	-webkit-box-orient: vertical;
+	overflow: hidden;
+}
+
+.task-title.done {
+	color: var(--text-muted-on-light);
+	text-decoration: line-through;
+	text-decoration-color: color-mix(in srgb, var(--lamp-done) 70%, transparent);
+}
+
+.cell-edit {
+	display: block;
+	width: 100%;
+	text-align: left;
+	background: transparent;
+	border: 1px solid transparent;
+	border-radius: var(--radius-sm);
+	padding: 5px 7px;
+	cursor: text;
+	transition: background 0.14s var(--ease), border-color 0.14s var(--ease);
+}
+
+.cell-edit:hover {
+	background: var(--surface);
+	border-color: var(--border-strong);
+}
+
+.cell-edit:focus-visible {
+	outline: none;
+	background: var(--surface);
+	border-color: var(--color-ink);
+}
+
+.issue-edit {
+	display: inline-flex;
+	width: auto;
+}
+
+.cell-input {
+	width: 100%;
+	box-sizing: border-box;
+	background: var(--surface);
+	border: 1px solid var(--color-ink);
+	border-radius: var(--radius-sm);
+	padding: 5px 7px;
+	font-family: var(--font-head);
+	font-weight: 700;
+	font-size: 14px;
+	letter-spacing: -0.01em;
+	color: var(--color-ink);
+	outline: none;
+}
+
+.issue-input {
+	font-size: 12px;
+}
+
+.row-actions {
+	display: flex;
+	align-items: center;
+	gap: 4px;
+}
+
+.confirm {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+	gap: 6px;
+}
+
+.confirm-btns {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+}
+
+.confirm .q {
+	font-size: 9px;
+	color: var(--text-muted-on-light);
+	white-space: nowrap;
+}
+
+.confirm .yes,
+.confirm .no {
+	border-radius: var(--radius-sm);
+	padding: 4px 8px;
+	font-family: var(--font-head);
+	font-size: 10px;
+	font-weight: 700;
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
+	cursor: pointer;
+}
+
+.confirm .yes {
+	border: 0;
+	background: var(--lamp-trash);
+	color: var(--color-white);
+}
+
+.confirm .no {
+	border: 1px solid var(--border-strong);
+	background: transparent;
+	color: var(--text-muted-on-light);
+}
+
+.confirm .no:hover {
+	color: var(--color-ink);
+}
+
+.sr-only {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	padding: 0;
+	margin: -1px;
+	overflow: hidden;
+	clip: rect(0, 0, 0, 0);
+	white-space: nowrap;
+	border: 0;
 }
 
 .skeleton {
